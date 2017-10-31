@@ -447,8 +447,10 @@ ldbg1 macro
     shl     ax, (type tile) / 2
     add     bp, ax
     es mov  ax, t_tile
+    push    dx
     mov     bx, TILE_WIDTH * TILE_LINES
     mul     bx
+    pop     dx
     mov     si, ax
 #em
 
@@ -543,8 +545,10 @@ loadspr macro
     shl     ax, (type sprite) / 2
     add     bp, ax
     es mov  ax, s_tile
+    push    dx
     mov     bx, SPR_WIDTH * SPR_LINES
     mul     bx
+    pop     dx
     mov     si, ax
 #em
 

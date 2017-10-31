@@ -1,0 +1,186 @@
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё one-on-one                                        Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё                                                   Ё
+;Ё copyright (C) 2017 jeff panici                    Ё
+;Ё https://nybbles.io                                Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+
+cursor_happy:
+    dw 0FFFFh, 0F81Fh, 0E007h, 0C003h
+    dw 08001h, 08001h, 00000h, 00000h
+    dw 00000h, 00000h, 08001h, 08001h
+    dw 0C003h, 0E007h, 0F81Fh, 0FFFFh
+    dw 00000h, 00000h, 007E0h, 01FF8h
+    dw 03FFCh, 033CCh, 073CEh, 07FFEh
+    dw 07FFEh, 06FF6h, 033CCh, 03C3Ch
+    dw 01FF8h, 007E0h, 00000h, 00000h
+
+cursor_hand:
+    dw 0E7FFh, 0C3FFh, 0C3FFh, 0C3FFh
+    dw 0C3FFh, 0C3FFh, 0C093h, 0C001h
+    dw 08001h, 00001h, 00001h, 00001h
+    dw 00003h, 08003h, 0C007h, 0FFFFh
+    dw 00000h, 01800h, 01800h, 01800h
+    dw 01800h, 01800h, 01800h, 01B6Ch
+    dw 01B6Ch, 05FFCh, 05FFCh, 05FFCh
+    dw 07FF8h, 03FF8h, 00000h, 00000h
+
+cursor_pointer:
+    dw 07FFFh, 03FFFh, 01FFFh, 00FFFh
+    dw 007FFh, 003FFh, 001FFh, 000FFh
+    dw 0007Fh, 0003Fh, 0001Fh, 0000Fh
+    dw 00607h, 00F83h, 01FE1h, 03FF8h
+    dw 00000h, 00000h, 04000h, 06000h
+    dw 07000h, 07800h, 07C00h, 07E00h
+    dw 07F00h, 07F80h, 07FC0h, 079E0h
+    dw 07070h, 06018h, 04004h, 00000h
+
+cursor_pointer2:
+    dw 09FFFh, 08FFFh, 087FFh, 083FFh
+    dw 081FFh, 080FFh, 0807Fh, 0803Fh
+    dw 0801Fh, 0800Fh, 080FFh, 0887Fh
+    dw 09879h, 0FC36h, 0FC36h, 0FE39h
+    dw 00000h, 02000h, 03000h, 03800h
+    dw 03C00h, 03E00h, 03F00h, 03F80h
+    dw 03FC0h, 03E00h, 03600h, 02300h
+    dw 00300h, 00186h, 00186h, 00000h
+
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё mouse_buttons                                     Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё returns bitmask in bx                             Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+mouse_buttons:
+    mov     ax, 0
+    int     33h
+    ret
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё mouse_cursor                                      Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё set the mouse cursor                              Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+mouse_cursor:
+    mov     bp, sp
+    mov     ax, bp[2]
+    int     33h
+    ret
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё mouse_pos                                         Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё returns mouse x position in cx, and y in dx       Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+mouse_pos:
+    mov     ax, 3
+    int     33h
+    ret
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё mouse_reset                                       Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё reset the mouse driver                            Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+mouse_reset:
+    mov     ax, 0
+    int     33h
+    ret
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё mouse_bitmap                                      Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё set pointer to bitmap for mouse cursor            Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+mouse_bitmap:
+    mov     bp, sp
+    mov     ax, 9
+    mov     dx, bp[2]
+    mov     bx, bp[4]
+    mov     cx, bp[6]
+    mov     es, cs
+    int     33h
+    ret
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё mouse_set_pos                                     Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё sets the mouse cursor position                    Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+mouse_set_pos:
+    mov     bp, sp
+    mov     cx, bp[2]
+    mov     dx, bp[4]
+    mov     ax, 4
+    int     33h
+    ret
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё mouse_range                                       Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё sets the range extent for mouse movement          Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+mouse_range:
+    mov     bp, sp
+    mov     ax, 7
+    mov     cx, bp[2]
+    mov     dx, bp[4]
+    int     33h
+    mov     ax, 8
+    mov     cx, bp[6]
+    mov     dx, bp[8]
+    int     33h
+    ret
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё mouse_sens                                        Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё sets the mouse sensitivity for x and y movement   Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+mouse_sens:
+    mov     bp, sp
+    mov     ax, 15
+    mov     cx, bp[2]
+    mov     dx, bp[4]
+    int     33h
+    ret
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё mouse_init                                        Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё initialize the mouse driver                       Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+mouse_init:
+    call    mouse_reset
+    push    0
+    call    mouse_cursor
+    add     sp, 2
+    push    0efh
+    push    0
+    push    0efh
+    push    0
+    call    mouse_range
+    add     sp, 8
+    ret

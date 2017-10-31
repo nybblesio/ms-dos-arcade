@@ -19,6 +19,7 @@ include memory.8
 include io.8
 include timer.8
 include video.8
+include mouse.8
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ game structures & variables                       ³
@@ -144,10 +145,11 @@ allocate:
 ;
 init:
     call    allocate
-    call    init_keyboard_isr
-    call    init_timer_isr
     mode_13
     mode_q
+    call    mouse_init
+    call    init_keyboard_isr
+    call    init_timer_isr
 
     loadspr 2
     setspr  2, 0, 48, 48, F_SPR_ENABLED, 0
@@ -171,6 +173,14 @@ init:
 ;
 update:
     fire_timers
+
+    push    es, bp, ds, ax, bx, si
+    call    mouse_pos
+    loadspr 1
+    es mov  s_y, dl
+    es mov  s_x, cl
+    pop     si, bx, ax, ds, bp, es
+
     cs mov  bp, inp_actions
     mov     cx, 4
 p0: next_key
