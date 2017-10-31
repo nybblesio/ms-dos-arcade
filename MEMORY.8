@@ -1,0 +1,78 @@
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ one-on-one                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ copyright (C) 2017 jeff panici                    ³
+;³ https://nybbles.io                                ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ memory allocation structures                      ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+struc [bp]
+                    dw  ?
+    alloc_para_n    dw  ?
+    alloc_seg_var   dw  ?
+ends
+
+struc [bp]
+                    dw  ?
+    memset_seg      dw  ?
+    memset_offset   dw  ?
+    memset_size     dw  ?
+    memset_value    dw  ?
+ends
+
+free_seg_addr   dw  ?
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ memory allocation functions and macros            ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_alloc:
+    mov     bp, sp
+    cmp     free_seg_addr, 0
+    jnz     >l0
+    mov     free_seg_addr, ds
+    add     free_seg_addr, 01000h
+l0: mov     ax, free_seg_addr
+    add     ax, alloc_para_n
+    mov     free_seg_addr, ax
+    mov     di, alloc_seg_var
+    mov     [di], ax
+    ret
+
+alloc macro
+    push    bp, ax, bx, di, #2, #1
+    call    _alloc
+    add     sp, 4
+    pop     di, bx, ax, bp
+#em
+
+_memset:
+    mov     bp, sp
+    mov     es, memset_seg
+    mov     di, memset_offset
+    mov     cx, memset_size
+    mov     ax, memset_value
+    es rep  stosb
+    ret
+
+memset macro
+    push    es, bp, ax, cx, di
+    push    #4, #3, #2, #1
+    call    _memset
+    add     sp, 8
+    pop     di, cx, ax, bp, es
+#em
+

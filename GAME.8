@@ -1,0 +1,237 @@
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ one-on-one                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ copyright (C) 2017 jeff panici                    ³
+;³ https://nybbles.io                                ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+code segment
+    jmp     start
+
+include constant.8
+include macro.8
+include control.8
+include memory.8
+include io.8
+include timer.8
+include video.8
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ game structures & variables                       ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+even
+
+state               db  ?
+exit_code           db  ?
+temp_ptr            dw  ?
+game_title:         db  'One-on-One'
+game_copyright:     db  ' 2017 Jeff Panici'
+
+inp_action struc [bp]
+    inp_scan_code   db ?
+    inp_callback    dw ?
+ends
+
+inp_actions:
+    db  KEY_LEFT
+    dw  p1_left
+
+    db  KEY_RIGHT
+    dw  p1_right
+
+    db  KEY_UP
+    dw  p1_up
+
+    db  KEY_DOWN
+    dw  p1_down
+
+    db  0
+    dw  0
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ main game engine                                  ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+p1_right:
+    loadspr 0
+    es add  s_x, 4
+    es cmp  s_x, 230
+    jb      >l0
+    es mov  s_x, 230
+l0: ret
+
+p1_down:
+    loadspr 0
+    es add  s_y, 4
+    es cmp  s_y, 230
+    jb      >l0
+    es mov  s_y, 230
+l0: ret
+
+p1_left:
+    loadspr 0
+    es sub  s_x, 4
+    es cmp  s_x, 10
+    ja      >l0
+    es mov  s_x, 10
+l0: ret
+
+p1_up:
+    loadspr 0
+    es sub  s_y, 4
+    es cmp  s_y, 10
+    ja      >l0
+    es mov  s_y, 10
+l0: ret
+
+timer_test:
+    reset_timer
+    loadspr 1
+    es mov  al, s_flags
+    test    al, F_SPR_ENABLED
+    jnz     >l0
+    or      al, F_SPR_ENABLED
+    jmp     >l1
+l0: and     al, not F_SPR_ENABLED
+l1: es mov  s_flags, al
+    ret
+;
+; allocate memory
+;
+allocate:
+    alloc   CTRL_RAM_SIZE / 16,  offset ctrl_ram_ptr
+    memset  ctrl_ram_ptr, 0, CTRL_RAM_SIZE, 0
+
+    mov     es, ctrl_ram_ptr
+    mov     bp, 0
+
+    alloc   TILE_BANK_SIZE / 16, offset temp_ptr
+    memset  temp_ptr, 0, TILE_BANK_SIZE, 04eh
+    es_movm c_bg_tiles, temp_ptr
+
+    alloc   TILE_BANK_SIZE / 16, offset temp_ptr
+    memset  temp_ptr,   0, TILE_BANK_SIZE, 07fh
+    memset  temp_ptr,   0, 128, 07ah
+    memset  temp_ptr, 128, 128, 08ah
+    memset  temp_ptr, 256, 256, 09ah
+    memset  temp_ptr, 512, 256, 0abh
+    memset  temp_ptr, 768, 256, 0bah
+    es_movm c_spr_tiles, temp_ptr
+
+    alloc   VRAM_SIZE / 16, offset back_buffer_ptr
+    memset  back_buffer_ptr, 0, VRAM_SIZE, 0
+
+    ret
+
+;
+; initialize everything
+;
+init:
+    call    allocate
+    call    init_keyboard_isr
+    call    init_timer_isr
+    mode_13
+    mode_q
+
+    loadspr 2
+    setspr  2, 0, 48, 48, F_SPR_ENABLED, 0
+
+    loadspr 1
+    setspr  1, 0, 26, 26, F_SPR_ENABLED, 0
+
+    loadspr 0
+    setspr  0, 0, 10, 10, F_SPR_ENABLED, 0
+
+    ldfreetimer
+    es mov  tm_callback, timer_test
+    es mov  tm_frames, 16
+    es mov  tm_count, 16
+    es mov  tm_flags, F_TIMER_ENABLED
+
+    ret
+
+;
+; update the game state
+;
+update:
+    fire_timers
+    cs mov  bp, inp_actions
+    mov     cx, 4
+p0: next_key
+    cmp     al, 0
+    je      >p4
+    cmp     al, KEY_ESC
+    je      >p5
+    dec     cx
+    cmp     cx, 0
+    jz      >p4
+p1: cs mov  bl, inp_scan_code
+    cmp     bl, 0
+    jnz     >p2
+    cs mov  bp, inp_actions
+    jmp     p0
+p2: cmp     al, bl
+    je      >p3
+    cs add  bp, type inp_action
+    jmp     p1
+p3: cs call [inp_callback]
+    jmp     p0
+p4: ret
+p5: jmp     exit
+
+;
+; render the video scene
+;   bg 1
+;   fg
+;   bg 2
+;   text
+draw:
+    wait_novblank
+    wait_vblank
+    video_bg1
+    video_fg
+    video_bg2
+    flip
+d0: ret
+
+;
+; entry point
+;
+start:
+    call    init
+
+;
+; the heart
+;
+game_loop:
+    cs call update
+    cs call draw
+    jmp     game_loop
+
+;
+; the end
+;
+exit:
+    call    reset_timer_isr
+    call    reset_keyboard_isr
+    mode_03
+    mov     ah, 04ch
+    mov     al, exit_code
+    int     21h
+    ret

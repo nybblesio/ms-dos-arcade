@@ -1,0 +1,126 @@
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ one-on-one                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ copyright (C) 2017 jeff panici                    ³
+;³ https://nybbles.io                                ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ keyboard isr and structures                       ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+key_scan        db ?
+key_queue       db 256 dup ?
+key_queue_head  db ?
+key_queue_tail  db ?
+key_old_isr     dd ?
+
+get_scan_isr:
+    cli
+    pushf
+    push    ax, bx, di
+    xor     bx, bx
+    cs mov  di, offset key_queue
+    cs mov  bl, key_queue_tail
+    add     di, bx
+    inc     bl
+    cs mov  key_queue_tail, bl
+    in      al, 060h
+    cs mov  key_scan, al
+    cs mov  b[di], al
+    in      al, 061h
+    mov     bl, al
+    or      al, 080h
+    out     061h, al
+    mov     al, bl
+    out     061h, al
+    mov     al, 020h
+    out     020h, al
+    pop     di, bx, ax
+    popf
+    sti
+    iret
+
+_next_key:
+    cs mov  bh, key_queue_tail
+    cs mov  bl, key_queue_head
+    cmp     bh, bl
+    jne     >l0
+    mov     al, 0
+    ret
+l0: cs mov  si, offset key_queue
+    xor     bh, bh
+    add     si, bx
+    cs mov  al, b[si]
+    cs inc  key_queue_head
+    ret
+
+next_key macro
+    push    si, bx
+    call    _next_key
+    pop     bx, si
+#em
+
+init_keyboard_isr:
+    cli
+    mov     ah, 035h
+    mov     al, 09h
+    int     21h
+    cs mov  w[key_old_isr], bx
+    cs mov  w[key_old_isr + 2], es
+    cs mov  dx, get_scan_isr
+    mov     ah, 025h
+    mov     al, 09h
+    int     21h
+    sti
+    ret
+
+reset_keyboard_isr:
+    cli
+    cs lds  dx, key_old_isr
+    mov     ah, 025h
+    mov     al, 09h
+    int     21h
+    sti
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ support macros                                    ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+outp macro
+    mov     dx, #1
+    mov     al, #2
+    out     dx, al
+#em
+
+inp macro
+    mov     dx, #1
+    in      al, dx
+#em
+
+wait_key macro
+m0: mov     ax, 0
+    int     16h
+    jz      m0
+#em
+
+read_key macro
+    mov     ah, 1
+    int     16h
+#em
+
+;
+;
+;
+

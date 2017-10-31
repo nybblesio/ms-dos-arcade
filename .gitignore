@@ -1,0 +1,7 @@
+*.old
+*.sym
+*.err
+*.lst
+*.com
+*.obj
+*.exe

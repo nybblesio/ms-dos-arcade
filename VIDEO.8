@@ -1,0 +1,743 @@
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ one-on-one                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ copyright (C) 2017 jeff panici                    ³
+;³ https://nybbles.io                                ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ video generator                                   ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ In this engine we use VGA mode 13h but tweaked    ³
+;³ so that it's 256x256x256.  This is known as       ³
+;³ Chained Mode Q.  Chained here means the VGA       ³
+;³ acts as though it's a linear address space.       ³
+;³                                                   ³
+;³ The downside to chained modes is we can only      ³
+;³ "see" 65536 bytes of the VGA memory space, even   ³
+;³ it has more to offer.  For this game, that's OK.  ³
+;³                                                   ³
+;³ We allocate a "back buffer" in conventional RAM   ³
+;³ and all of the video generation functions operate ³
+;³ on this buffer.  The flip function does the       ³
+;³ copy from this buffer to the actual VRAM.         ³
+;³                                                   ³
+;³ The video generator is simple:                    ³
+;³                                                   ³
+;³ - (16) 16-color palettes.  The first 8 are for    ³
+;³   backgrounds and the second 8 are for            ³
+;³   sprites.  Palettes can be redefined during      ³
+;³   VBLANK using the VGA hardware.                  ³
+;³                                                   ³
+;³ - One (or more) 64Kb banks of 8x8 background      ³
+;³   tiles.  Each tile can have one of 8 palettes    ³
+;³   and the palette can be changed at any time.     ³
+;³                                                   ³
+;³ - Two backgrounds, 32x32 8x8 tiles in size.       ³
+;³   BG2 is drawn with a higher priority. Tiles      ³
+;³   in the map that are 0 are transparent.          ³
+;³                                                   ³
+;³ - Up to 256 16x16 sprites on-screen.  Each sprite ³
+;³   can be assigned one of 8 16-color palettes.     ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+vga_reg_cfg struc [bp]
+    vga_reg     dw ?
+    vga_func    db ?
+    vga_value   db ?
+    vga_flags   db ?
+    vga_pad     db ?
+ends
+
+even
+modeq_params:
+    ; misc output
+    dw  032ch
+    db  00h,  0e3h,  0, 0
+
+    ; horizonal total
+    dw  03d4h
+    db  00h,  05fh,  0, 0
+
+    ; horizontal display enable end
+    dw  03d4h
+    db  01h,  03fh,  0, 0
+
+    ; horizontal blank start
+    dw  03d4h
+    db  02h,  040h,  0, 0
+
+    ; horizontal blank end
+    dw  03d4h
+    db  03h,  082h,  0, 0
+
+    ; horizontal retrace start
+    dw  03d4h
+    db  04h,  04ah,  0, 0
+
+    ; horizontal retrace end
+    dw  03d4h
+    db  05h,  09ah,  0, 0
+
+    ; vertical total
+    dw  03d4h
+    db  06h,  023h,  0, 0
+
+    ; overflow register
+    dw  03d4h
+    db  07h,  0b2h,  0, 0
+
+    ; preset row scan
+    dw  03d4h
+    db  08h,     0,  0, 0
+
+    ; max scan line/char horizontal time
+    dw  03d4h
+    db  09h,  061h,  0, 0
+
+    ; vertical retrace start
+    dw  03d4h
+    db  010h,  0ah,  0, 0
+
+    ; vertical retrace end
+    dw  03d4h
+    db  011h, 0ach,  0, 0
+
+    ; vertical display enable end
+    dw  03d4h
+    db  012h, 0ffh,  0, 0
+
+    ; offset/logical width
+    dw  03d4h
+    db  013h, 020h,  0, 0
+
+    ; underline location
+    dw  03d4h
+    db  014h, 040h,  0, 0
+
+    ; vertical blank start
+    dw  03d4h
+    db  015h,  07h,  0, 0
+
+    ; vertical blank end
+    dw  03d4h
+    db  016h, 01ah,  0, 0
+
+    ; mode control
+    dw  03d4h
+    db  017h, 0a3h,  0, 0
+
+    ; clock mode register
+    dw  03c4h
+    db  01h,     1,  0, 0
+
+    ; memory mode register
+    dw  03c4h
+    db  04h,   0eh,  0, 0
+
+    ; mode register
+    dw  03ceh
+    db  05h,  040h,  0, 0
+
+    ; misc register
+    dw  03ceh
+    db  06h,   05h,  0, 0
+
+    ; mode control
+    dw  03c0h
+    db  010h, 041h, 32, 0
+
+    ; horizontal panning
+    dw  03c0h
+    db  013h,    0, 32, 0
+
+    ; end marker
+    dw  0
+    db  0,       0,  0, 0
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ font_init                                         ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³ this function uses the BIOS to grab the seg:off   ³
+;³ for the 8x8 and 8x14 fonts for use in put_char.   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+font_init:
+    mov     ax, 01130h
+    mov     bx, 0300h
+    int     10h
+
+    mov     ax, bp
+    mov     bp, offset small_font
+    mov     f_segment, es
+    mov     f_offset, ax
+    mov     f_width, 8
+    mov     f_height, 8
+
+    mov     ax, 01130h
+    mov     bx, 0200h
+    int     10h
+
+    mov     ax, bp
+    mov     bp, offset large_font
+    mov     f_segment, es
+    mov     f_offset, ax
+    mov     f_width, 8
+    mov     f_height, 14
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ put_char                                          ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³ this function accepts the struc on the stack      ³
+;³ and uses the BIOS font data to render a single    ³
+;³ ASCII character to the back_buffer_ptr.           ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+put_char:
+    struc [bp]
+                dw ?
+        chr_fnt dw ?
+        chr_v   dw ?
+        chr_pos dw ?
+        chr_bg  db ?
+        chr_fg  db ?
+    ends
+
+    mov     bp, sp
+    mov     dx, chr_pos
+    mov     bh, chr_fg
+    mov     bl, chr_bg
+
+    mov     ax, chr_v
+    mov     bp, chr_fnt
+    mul     f_height
+    mov     si, ax
+    add     si, f_offset
+    mov     ds, f_segment
+
+    xor     ax, ax
+    xor     cx, cx
+    mov     al, 10000000xb
+    mov     ch, f_height
+    cs mov  es, back_buffer_ptr
+l0: ds mov  cl, [si]
+    and     cl, al
+    jz      >l1
+    mov     di, dx
+    es mov  [di], bh
+    jmp     l2
+l1: cmp     bl, 0
+    jz      >l2
+    es mov  [di], bl
+l2: inc     dl
+    shr     al, 1
+    jnz     l0
+    inc     si
+    mov     al, 10000000xb
+    inc     dh
+    sub     dl, f_width
+    dec     ch
+    jnz     l0
+    ret
+
+char macro
+    push    es, ds
+    pusha
+    push    #4, #3, #2, #1
+    call    put_char
+    add     sp, 8
+    pop     ds, es
+    popa
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ put_string                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³ accepts a struc on the stack and draws the string ³
+;³ one character at a time using the put_char        ³
+;³ function.                                         ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+put_string:
+    struc [bp]
+                dw ?
+        str_fnt dw ?
+        str_len dw ?
+        str_s   dw ?
+        str_pos dw ?
+        str_clr dw ?
+    ends
+
+    mov     bp, sp
+    mov     si, str_s
+    mov     cx, str_len
+    mov     bx, str_pos
+    xor     ax, ax
+l0: mov     al, [si]
+    char    str_fnt, ax, bx, str_clr
+    inc     si
+    add     bl, 8
+    dec     cx
+    jnz     l0
+    ret
+
+string macro
+    push    es, ds
+    pusha
+    push    #5, #4, #3, #2, #1
+    call    put_string
+    add     sp, 10
+    pop     ds, es
+    popa
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ clear_page                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+clear_page:
+    cs mov  es, back_buffer_ptr
+    mov     di, 0
+    mov     cx, VRAM_SIZE / 2
+    mov     ax, 07f7fh
+    cld
+    es rep  stosw
+    ret
+
+clear macro
+    push    es, di, cx, ax
+    call    clear_page
+    pop     ax, cx, di, es
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ copy_page                                         ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+copy_page:
+    cs mov  ds, back_buffer_ptr
+    mov     es, VRAM
+    mov     si, 0
+    mov     di, 0
+    mov     cx, VRAM_SIZE / 2
+    cld
+l0: ds lodsw
+    es stosw
+    cmp     cx, 0
+    jz      >l1
+    dec     cx
+    jmp     l0
+l1: ret
+
+flip macro
+    push    es, ds, si, di, cx, ax
+    call    copy_page
+    pop     ax, cx, di, si, ds, es
+#em
+
+scron macro
+    push    ax, dx
+    inp     IS1_RC
+    outp    ATT_IW, 020h
+    pop     dx, ax
+#em
+
+scroff macro
+    push    ax, dx
+    inp     IS1_RC
+    outp    ATT_IW, 0
+    pop     dx, ax
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ set_palette                                       ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+set_palette:
+    struc [bp]
+                dw 2 dup (?)
+        idx     db ?
+        red     db ?
+        green   db ?
+        blue    db ?
+    ends
+
+    push    bp
+    mov     bp, sp
+    mov     dx, PEL_IW
+    mov     al, idx
+    out     dx, al
+    mov     dx, PEL_D
+    mov     al, red
+    out     dx, al
+    mov     al, green
+    out     dx, al
+    mov     al, blue
+    out     dx, al
+    pop     bp
+    ret
+
+palette macro
+    push    high(#1) + low(#2)
+    push    high(#3) + low(#4)
+    call    set_palette
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ put_tile                                          ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+put_tile:
+    es mov  cl, t_pal
+    shl     cl, 4
+    xor     dx, dx
+    cs mov  es, back_buffer_ptr
+    mov     bh, TILE_LINES
+    mov     bl, TILE_WIDTH
+l0: ds mov  dl, [si]
+    mov     ch, dl
+    shr     ch, 4
+    and     ch, 0fh
+    cmp     ch, 0
+    jz      >l1
+    add     ch, cl
+    mov     di, ax
+    es mov  [di], ch
+l1: inc     al
+    and     dl, 0fh
+    cmp     dl, 0
+    jz      >l2
+    add     dl, cl
+    mov     di, ax
+    es mov  [di], dl
+l2: inc     al
+    inc     si
+    dec     bl
+    jnz     l0
+    mov     bl, TILE_WIDTH
+    inc     ah
+    sub     al, TILE_WIDTH * 2
+    dec     bh
+    jnz     l0
+    ret
+
+ldbg1 macro
+    cs mov  es, ctrl_ram_ptr
+    mov     bp, 0
+    es mov  ds, c_bg_tiles
+    es mov  bp, offset c_bg1
+    mov     ax, #1
+    shl     ax, (type tile) / 2
+    add     bp, ax
+    es mov  ax, t_tile
+    mov     bx, TILE_WIDTH * TILE_LINES
+    mul     bx
+    mov     si, ax
+#em
+
+_video_bg1:
+    xor     di, di
+    xor     cx, cx
+    mov     bh, 32
+    mov     bl, 32
+l0: push    es, ax, bx, cx, dx, di
+    ldbg1   di
+    mov     ax, cx
+    call    put_tile
+    pop     di, dx, cx, bx, ax, es
+    inc     di
+    add     cl, 8
+    dec     bl
+    cmp     bl, 0
+    jnz     l0
+    mov     cl, 0
+    add     ch, 8
+    mov     bl, 32
+    dec     bh
+    cmp     bh, 0
+    jnz     l0
+    ret
+
+video_bg1 macro
+    push    es, ds, bp, ax, bx, cx, dx, si, di
+    call    _video_bg1
+    pop     di, si, dx, cx, bx, ax, bp, ds, es
+#em
+
+_video_bg2:
+    ret
+
+video_bg2 macro
+    push    es, ds, bp, ax, bx, cx, dx, si, di
+    call    _video_bg2
+    pop     di, si, dx, cx, bx, ax, bp, ds, es
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ put_sprite                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+put_sprite:
+    es mov  ah, s_y
+    es mov  al, s_x
+    es mov  cl, s_pal
+    shl     cl, 4
+    add     cl, 128
+    xor     dx, dx
+    cs mov  es, back_buffer_ptr
+    mov     bh, SPR_LINES
+    mov     bl, SPR_WIDTH
+l0: ds mov  dl, [si]
+    mov     ch, dl
+    shr     ch, 4
+    and     ch, 0fh
+    cmp     ch, 0
+    jz      >l1
+    add     ch, cl
+    mov     di, ax
+    es mov  [di], ch
+l1: inc     al
+    and     dl, 0fh
+    cmp     dl, 0
+    jz      >l2
+    add     dl, cl
+    mov     di, ax
+    es mov  [di], dl
+l2: inc     al
+    inc     si
+    dec     bl
+    jnz     l0
+    mov     bl, SPR_WIDTH
+    inc     ah
+    sub     al, SPR_WIDTH * 2
+    dec     bh
+    jnz     l0
+    ret
+
+loadspr macro
+    cs mov  es, ctrl_ram_ptr
+    mov     bp, 0
+    es mov  ds, c_spr_tiles
+    es mov  bp, offset c_sprs
+    mov     ax, #1
+    shl     ax, (type sprite) / 2
+    add     bp, ax
+    es mov  ax, s_tile
+    mov     bx, SPR_WIDTH * SPR_LINES
+    mul     bx
+    mov     si, ax
+#em
+
+setspr macro
+    es mov  s_tile, #1
+    es mov  s_pal, #2
+    es mov  s_y, #3
+    es mov  s_x, #4
+    es mov  s_flags, #5
+    es mov  s_user, #6
+#em
+
+_video_fg:
+    xor     cx, cx
+    mov     cl, 0ffh
+l0: loadspr cx
+    es mov  al, s_flags
+    and     al, F_SPR_ENABLED
+    cmp     al, 0
+    jz      >l1
+    push    es, cx
+    cs call put_sprite
+    pop     cx, es
+l1: cmp     cl, 0
+    jz      >l2
+    dec     cl
+    jmp     l0
+l2: ret
+
+video_fg macro
+    push    es, ds, bp, ax, bx, cx, dx, si, di
+    call    _video_fg
+    pop     di, si, dx, cx, bx, ax, bp, ds, es
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ put_pixel                                         ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+put_pixel:
+    struc [bp]
+                dw ?
+        y_pos   dw ?
+        x_pos   dw ?
+        color   dw ?
+    ends
+
+    mov     bp, sp
+    mov     ax, y_pos
+    mov     cx, VRAM_PITCH
+    mul     cx
+    add     ax, x_pos
+    mov     di, ax
+    cs mov  es, back_buffer_ptr
+    mov     dx, color
+    es mov  [di], dl
+    ret
+
+pixel macro
+    pusha
+    push    #3, #2, #1
+    call    put_pixel
+    add     sp, 6
+    popa
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _is_vblank                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_is_vblank:
+    mov     dx, IS1_RC
+    in      al, dx
+    and     al, 00001000xb
+    ret
+
+is_vblank macro
+    push    dx
+    call    _is_vblank
+    pop     dx
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ wait_vblank                                       ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_wait_vblank:
+l0: mov     dx, IS1_RC
+    in      al, dx
+    and     al, 00001000xb
+    jz      l0
+    ret
+
+wait_vblank macro
+    push    dx, ax
+    call    _wait_vblank
+    pop     ax, dx
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ wait_novblank                                     ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_wait_novblank:
+l0: mov     dx, IS1_RC
+    in      al, dx
+    and     al, 00001000xb
+    jnz     l0
+    ret
+
+wait_novblank macro
+    push    dx, ax
+    call    _wait_novblank
+    pop     ax, dx
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ graphics mode functions & macros                  ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+mode_13 macro
+    mov     ah, 0
+    mov     al, 13h
+    int     10h
+    call    font_init
+#em
+
+mode_03 macro
+    mov     ah, 0
+    mov     al, 3
+    int     10h
+#em
+
+_mode_q:
+    mov     dx, CRT_IC
+    mov     al, 011h
+    out     dx, al
+    inc     dx
+    in      al, dx
+    and     al, 07fh
+    mov     ah, al
+    mov     al, 011h
+    dec     dx
+    out     dx, ax
+    mov     bp, modeq_params
+l2: mov     dx, vga_reg
+    cmp     dx, 0
+    je      >l0
+    mov     al, vga_func
+    mov     bl, vga_flags
+    cmp     bl, 0
+    jz      >l1
+    add     al, bl
+l1: out     dx, al
+    inc     dx
+    mov     al, vga_value
+    out     dx, al
+    add     bp, type vga_reg_cfg
+    jmp     l2
+l0: mov     dx, CRT_IC
+    mov     al, 011h
+    out     dx, al
+    inc     dx
+    in      al, dx
+    or      al, 080h
+    mov     ah, al
+    mov     al, 011h
+    dec     dx
+    out     dx, ax
+    ret
+
+mode_q macro
+    push    bp, ax, bx, dx
+    call    _mode_q
+    pop     dx, bx, ax, bp
+#em
+
+;
+;
+;
+

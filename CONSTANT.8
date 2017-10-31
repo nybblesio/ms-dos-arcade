@@ -1,0 +1,65 @@
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё one-on-one                                        Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё                                                   Ё
+;Ё copyright (C) 2017 jeff panici                    Ё
+;Ё https://nybbles.io                                Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+
+CRT_IC      equ 03d4h
+CRT_IM      equ 03b4h
+ATT_IW      equ 03c0h
+GRA_I       equ 03ceh
+SEQ_I       equ 03c4h
+PEL_IW      equ 03c8h
+PEL_IR      equ 03c7h
+
+CRT_DC      equ 03d5h
+CRT_DM      equ 03b5h
+ATT_R       equ 03c1h
+GRA_D       equ 03cfh
+SEQ_D       equ 03c5h
+MIS_R       equ 03cch
+MIS_W       equ 03c2h
+IS1_RC      equ 03dah
+IS1_RM      equ 03bah
+PEL_D       equ 03c9h
+PEL_MSK     equ 03c6h
+
+VRAM        equ 0a000h
+VRAM_SIZE   equ 0ffffh
+VRAM_PITCH  equ 256
+SPR_LINES   equ 16
+SPR_WIDTH   equ 8
+TILE_LINES  equ 8
+TILE_WIDTH  equ 4
+
+WAIT_TICKS  equ 16
+
+KEY_ESC     equ 01h
+KEY_ENTER   equ 01ch
+KEY_CTRL    equ 01dh
+KEY_A       equ 01eh
+KEY_S       equ 01fh
+KEY_D       equ 020h
+KEY_W       equ 011h
+KEY_LSHIFT  equ 02ah
+KEY_RSHIFT  equ 036h
+KEY_LALT    equ 038h
+KEY_SPACE   equ 039h
+KEY_UP      equ 048h
+KEY_LEFT    equ 04bh
+KEY_RIGHT   equ 04dh
+KEY_DOWN    equ 050h
+KEY_ESCAPE1 equ 0e0h
+KEY_ESCAPE2 equ 0e1h
+
+; base timer base is 1193180 / frequency
+TIMER_BASE  equ 18
+TIMER_60HZ  equ 19886
+;
+;
+;

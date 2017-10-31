@@ -1,0 +1,29 @@
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё one-on-one                                        Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё                                                   Ё
+;Ё copyright (C) 2017 jeff panici                    Ё
+;Ё https://nybbles.io                                Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+
+debug macro
+    int     3
+#em
+
+movm macro
+    push    dx
+    mov     dx, #2
+    mov     #1, dx
+    pop     dx
+#em
+
+es_movm macro
+    push    dx
+    mov     dx, #2
+    es mov  #1, dx
+    pop     dx
+#em
+

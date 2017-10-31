@@ -1,0 +1,91 @@
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ one-on-one                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ copyright (C) 2017 jeff panici                    ³
+;³ https://nybbles.io                                ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ control ram structures and variables              ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+F_SPR_ENABLED   equ 00000001xb
+F_SPR_FLIP_X    equ 00000010xb
+F_SPR_FLIP_Y    equ 00000100xb
+
+F_TIMER_ENABLED equ 00000001xb
+F_TIMER_EXPIRED equ 00000010xb
+F_TIMER_READY   equ 00000100xb
+
+timer struc [bp]
+    tm_callback dw ?
+    tm_frames   dw ?
+    tm_count    dw ?
+    tm_flags    db ?
+    tm_pad      db ?
+ends
+
+sprite struc [bp]
+    s_tile      dw ?
+    s_y         db ?
+    s_x         db ?
+    s_pal       db ?
+    s_flags     db ?
+    s_user      dw ?
+ends
+
+tile struc [bp]
+    t_tile      dw ?
+    t_pal       db ?
+    t_flags     db ?
+ends
+
+bg struc [bp]
+    b_tiles     db ((type tile) * 1024) dup ?
+    b_y         dw ?
+    b_x         dw ?
+    b_flags     db ?
+    b_pad       db ?
+ends
+
+ctrl struc [bp]
+    c_spr_tiles dw ?
+    c_bg_tiles  dw ?
+    c_sprs      db ((type sprite) * 256) dup ?
+    c_bg1       db (type bg) dup ?
+    c_bg2       db (type bg) dup ?
+    c_timers    db ((type timer) * 32) dup ?
+ends
+
+ctrl_ram_ptr    dw ?
+back_buffer_ptr dw ?
+
+font struc [bp]
+    f_segment   dw ?
+    f_offset    dw ?
+    f_width     db ?
+    f_height    db ?
+ends
+
+small_font      db (type font) dup ?
+large_font      db (type font) dup ?
+
+;
+;
+;
+
+CTRL_RAM_SIZE   equ 04000h
+TILE_BANK_SIZE  equ 0ffffh
+SPRS_TABLE_SIZE equ ((type sprite) * 256)
+
+;
+;
+;

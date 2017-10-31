@@ -1,0 +1,182 @@
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ one-on-one                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ copyright (C) 2017 jeff panici                    ³
+;³ https://nybbles.io                                ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ timer functions                                   ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+timer_old_isr   dd  ?
+fast_tick       dd  ?
+
+_get_timer:
+    mov     bp, sp
+    mov     si, bp[2]
+    cs mov  es, ctrl_ram_ptr
+    es mov  bp, offset c_timers
+    shl     si, (type timer) / 2
+    add     bp, si
+    ret
+
+ldtimer macro
+    push    #1
+    call    _get_timer
+    add     sp, 2
+#em
+
+_get_free_timer:
+    mov     cx, 32
+    cs mov  es, ctrl_ram_ptr
+    es mov  bp, offset c_timers
+l0: es cmp  tm_callback, 0
+    jz      >l2
+    cmp     cx, 0
+    jz      >l1
+    dec     cx
+    add     bp, type timer
+    jmp     l0
+l1: mov     bp, 0
+l2: ret
+
+ldfreetimer macro
+    push    cx
+    call    _get_free_timer
+    pop     cx
+#em
+
+_kill_timer:
+    mov     di, bp
+    mov     cx, type timer
+    mov     ax, 0
+    es rep  stosw
+    ret
+
+kill_timer macro
+    push    di, cx, ax
+    call    _kill_timer
+    pop     ax, cx, di
+#em
+
+reset_timer macro
+    es mov  al, tm_flags
+    or      al, F_TIMER_ENABLED
+    and     al, not F_TIMER_READY
+    es mov  tm_flags, al
+    es mov  ax, tm_frames
+    es mov  tm_count, ax
+#em
+
+_update_timers:
+    mov     cx, 32
+    cs mov  es, ctrl_ram_ptr
+    es mov  bp, offset c_timers
+l0: es mov  al, tm_flags
+    test    al, F_TIMER_ENABLED
+    je      >l2
+    es mov  di, tm_callback
+    es cmp  di, 0
+    je      >l2
+    es cmp  tm_count, 0
+    jg      >l1
+    and     al, not F_TIMER_ENABLED
+    or      al, F_TIMER_READY
+    es mov  tm_flags, al
+    jmp     >l2
+l1: es dec  tm_count
+l2: dec     cx
+    cmp     cx, 0
+    je      >l3
+    add     bp, type timer
+    jmp     l0
+l3: ret
+
+update_timers macro
+    push    es, bp, ax, cx, di
+    call    _update_timers
+    pop     di, cx, ax, bp, es
+#em
+
+_fire_timers:
+    mov     cx, 32
+    cs mov  es, ctrl_ram_ptr
+    es mov  bp, offset c_timers
+l0: es mov  al, tm_flags
+    test    al, F_TIMER_READY
+    jz      >l1
+    es mov  di, tm_callback
+    push    es, bp, ax, cx, di
+    cs call di
+    pop     di, cx, ax, bp, es
+l1: dec     cx
+    cmp     cx, 0
+    je      >l2
+    add     bp, type timer
+    jmp     l0
+l2: ret
+
+fire_timers macro
+    push    es, bp, ax, cx, di
+    call    _fire_timers
+    pop     di, cx, ax, bp, es
+#em
+
+game_timer_isr:
+    cli
+    push    es, ax
+    cs mov  ax, w[fast_tick + 2]
+    add     ax, 1
+    cs adc  w[fast_tick], ax
+    update_timers
+    mov     al, 020h
+    out     020h, al
+    pop     ax, es
+    sti
+    iret
+
+init_timer_isr:
+    cli
+    mov     bx, TIMER_60HZ
+    mov     al, 00110110xb
+    out     043h, al
+    mov     al, bl
+    out     040h, al
+    mov     al, bh
+    out     040h, al
+    mov     ah, 035h
+    mov     al, 08h
+    int     21h
+    cs mov  w[timer_old_isr + 2], es
+    cs mov  w[timer_old_isr], bx
+    cs mov  dx, game_timer_isr
+    mov     ah, 025h
+    mov     al, 08h
+    int     21h
+    sti
+    ret
+
+reset_timer_isr:
+    cli
+    xor     bx, bx
+    mov     al, 00110110xb
+    out     043h, al
+    mov     al, bl
+    out     040h, al
+    mov     al, bh
+    out     040h, al
+    cs lds  dx, timer_old_isr
+    mov     ah, 025h
+    mov     al, 08h
+    int     21h
+    sti
+    ret
