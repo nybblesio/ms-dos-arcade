@@ -33,8 +33,8 @@ even
 state               db  ?
 exit_code           db  ?
 temp_ptr            dw  ?
-game_title:         db  'One-on-One'
-game_copyright:     db  ' 2017 Jeff Panici'
+game_title:         db  'ONE-ON-ONE'
+game_copyright:     db  '(C) 2017 JEFF PANICI'
 
 inp_action struc [bp]
     inp_scan_code   db ?
@@ -123,7 +123,7 @@ allocate:
     mov     bp, 0
 
     alloc   TILE_BANK_SIZE / 16, offset temp_ptr
-    memset  temp_ptr, 0, TILE_BANK_SIZE, 04eh
+    memset  temp_ptr, 0, TILE_BANK_SIZE, 024h
     es_movm c_bg_tiles, temp_ptr
 
     alloc   TILE_BANK_SIZE / 16, offset temp_ptr
@@ -217,8 +217,12 @@ draw:
     video_bg1
     video_fg
     video_bg2
+    string  offset micro_font, 10, game_title,     04a60h, 0800h, 1
+    string  offset micro_font, 10, game_title,     04b61h, 0700h, 1
+    string  offset micro_font, 20, game_copyright, 05a3eh, 0800h, 1
+    string  offset micro_font, 20, game_copyright, 05b3fh, 0700h, 1
     flip
-d0: ret
+    ret
 
 ;
 ; entry point

@@ -6,3 +6,5 @@
 *.obj
 *.exe
 *.und
+*.bak
+*.map

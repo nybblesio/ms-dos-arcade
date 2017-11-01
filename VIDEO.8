@@ -161,6 +161,8 @@ modeq_params:
     dw  0
     db  0,       0,  0, 0
 
+include font.8
+
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ font_init                                         ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
@@ -190,6 +192,13 @@ font_init:
     mov     f_offset, ax
     mov     f_width, 8
     mov     f_height, 14
+
+    mov     bp, offset micro_font
+    mov     f_segment, cs
+    mov     f_offset, offset micro_font_bits
+    mov     f_width, 5
+    mov     f_height, 5
+
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -205,14 +214,12 @@ put_char:
         chr_fnt dw ?
         chr_v   dw ?
         chr_pos dw ?
-        chr_bg  db ?
-        chr_fg  db ?
+        chr_clr dw ?
     ends
 
     mov     bp, sp
     mov     dx, chr_pos
-    mov     bh, chr_fg
-    mov     bl, chr_bg
+    mov     bx, chr_clr
 
     mov     ax, chr_v
     mov     bp, chr_fnt
@@ -222,38 +229,44 @@ put_char:
     mov     ds, f_segment
 
     xor     ax, ax
+    mov     ah, f_width
+    dec     ah
+    mov     al, 1
+    mov     cl, ah
+    shl     al, cl
+    mov     ah, al
     xor     cx, cx
-    mov     al, 10000000xb
     mov     ch, f_height
     cs mov  es, back_buffer_ptr
-l0: ds mov  cl, [si]
+c0: ds mov  cl, [si]
     and     cl, al
-    jz      >l1
+    cmp     cl, 0
+    je      >c1
     mov     di, dx
     es mov  [di], bh
-    jmp     l2
-l1: cmp     bl, 0
-    jz      >l2
+    jmp     >c2
+c1: cmp     bl, 0
+    je      >c2
     es mov  [di], bl
-l2: inc     dl
+c2: inc     dl
     shr     al, 1
-    jnz     l0
+    cmp     al, 0
+    jnz     c0
     inc     si
-    mov     al, 10000000xb
+    mov     al, ah
     inc     dh
     sub     dl, f_width
     dec     ch
-    jnz     l0
+    cmp     ch, 0
+    jne     c0
     ret
 
 char macro
-    push    es, ds
-    pusha
+    push    es, ds, bp, ax, bx, cx, dx, di, si
     push    #4, #3, #2, #1
     call    put_char
     add     sp, 8
-    pop     ds, es
-    popa
+    pop     si, di, dx, cx, bx, ax, bp, ds, es
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -271,29 +284,31 @@ put_string:
         str_s   dw ?
         str_pos dw ?
         str_clr dw ?
+        str_sbc dw ?
     ends
 
     mov     bp, sp
     mov     si, str_s
+    mov     di, str_fnt
     mov     cx, str_len
     mov     bx, str_pos
     xor     ax, ax
-l0: mov     al, [si]
-    char    str_fnt, ax, bx, str_clr
+s0: cs mov  al, [si]
+    char    di, ax, bx, str_clr
     inc     si
-    add     bl, 8
+    cs add  bl, di[5]
+    add     bl, b[str_sbc]
     dec     cx
-    jnz     l0
+    cmp     cx, 0
+    jne     s0
     ret
 
 string macro
-    push    es, ds
-    pusha
-    push    #5, #4, #3, #2, #1
+    push    es, ds, bp, ax, bx, cx, dx, si, di
+    push    #6, #5, #4, #3, #2, #1
     call    put_string
-    add     sp, 10
-    pop     ds, es
-    popa
+    add     sp, 12
+    pop     di, si, dx, cx, bx, ax, bp, ds, es
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
