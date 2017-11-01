@@ -298,9 +298,7 @@ s0: cs mov  al, [si]
     inc     si
     cs add  bl, di[4]
     add     bl, b[str_sbc]
-    dec     cx
-    cmp     cx, 0
-    jne     s0
+    loop    s0
     ret
 
 string macro
@@ -321,7 +319,7 @@ string macro
 clear_page:
     cs mov  es, back_buffer_ptr
     mov     di, 0
-    mov     cx, VRAM_SIZE / 2
+    mov     cx, (VRAM_SIZE / 2) + 2
     mov     ax, 07f7fh
     cld
     es rep  stosw
@@ -345,14 +343,11 @@ copy_page:
     mov     es, VRAM
     mov     si, 0
     mov     di, 0
-    mov     cx, VRAM_SIZE / 2
+    mov     cx, (VRAM_SIZE / 2) + 2
     cld
 l0: ds lodsw
     es stosw
-    cmp     cx, 0
-    jz      >l1
-    dec     cx
-    jmp     l0
+    loop    l0
 l1: ret
 
 flip macro
@@ -483,13 +478,13 @@ l0: push    es, ax, bx, cx, dx, di
     add     cl, 8
     dec     bl
     cmp     bl, 0
-    jnz     l0
+    jne     l0
     mov     cl, 0
     add     ch, 8
     mov     bl, 32
     dec     bh
     cmp     bh, 0
-    jnz     l0
+    jne     l0
     ret
 
 video_bg1 macro

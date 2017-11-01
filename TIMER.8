@@ -19,6 +19,7 @@
 
 timer_old_isr   dd  ?
 fast_tick       dd  ?
+old_isr_tick    db  3
 
 _get_timer:
     mov     bp, sp
@@ -137,10 +138,17 @@ game_timer_isr:
     cs mov  ax, w[fast_tick + 2]
     add     ax, 1
     cs adc  w[fast_tick], ax
+    cs dec  old_isr_tick
+    cs cmp  old_isr_tick, 0
+    je      >l0
     update_timers
     mov     al, 020h
     out     020h, al
-    pop     ax, es
+    jmp     >l1
+l0: cs mov  old_isr_tick, 3
+    pushf
+    cs call dword ptr timer_old_isr
+l1: pop     ax, es
     sti
     iret
 

@@ -24,8 +24,7 @@ key_old_isr     dd ?
 
 get_scan_isr:
     cli
-    pushf
-    push    ax, bx, di
+    push    ds, ax, bx, di
     xor     bx, bx
     cs mov  di, offset key_queue
     cs mov  bl, key_queue_tail
@@ -41,10 +40,9 @@ get_scan_isr:
     out     061h, al
     mov     al, bl
     out     061h, al
-    mov     al, 020h
-    out     020h, al
-    pop     di, bx, ax
-    popf
+    pushf
+    cs call dword ptr key_old_isr
+    pop     di, bx, ax, ds
     sti
     iret
 
