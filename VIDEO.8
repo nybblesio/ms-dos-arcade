@@ -214,12 +214,15 @@ put_char:
         chr_fnt dw ?
         chr_v   dw ?
         chr_pos dw ?
-        chr_clr dw ?
+        chr_pal db ?
+        chr_clr db ?
     ends
 
     mov     bp, sp
     mov     dx, chr_pos
-    mov     bx, chr_clr
+    mov     bl, chr_pal
+    shl     bl, 4
+    add     bl, chr_clr
 
     mov     ax, chr_v
     mov     bp, chr_fnt
@@ -238,20 +241,17 @@ put_char:
     xor     cx, cx
     mov     ch, f_height
     cs mov  es, back_buffer_ptr
-c0: ds mov  cl, [si]
+c0: ds mov  bh, [si]
+c1: mov     cl, bh
     and     cl, al
     cmp     cl, 0
-    je      >c1
-    mov     di, dx
-    es mov  [di], bh
-    jmp     >c2
-c1: cmp     bl, 0
     je      >c2
+    mov     di, dx
     es mov  [di], bl
 c2: inc     dl
     shr     al, 1
     cmp     al, 0
-    jnz     c0
+    jne     c1
     inc     si
     mov     al, ah
     inc     dh
@@ -377,34 +377,44 @@ scroff macro
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-set_palette:
+store_palette:
     struc [bp]
-                dw 2 dup (?)
-        idx     db ?
-        red     db ?
-        green   db ?
-        blue    db ?
+                dw ?
+                db ?
+        pal_n   db ?
+                db ?
+        pal_r   db ?
+                db ?
+        pal_g   db ?
+                db ?
+        pal_b   db ?
     ends
 
-    push    bp
     mov     bp, sp
     mov     dx, PEL_IW
-    mov     al, idx
+    mov     al, pal_n
     out     dx, al
     mov     dx, PEL_D
-    mov     al, red
+    mov     al, pal_r
     out     dx, al
-    mov     al, green
+    mov     al, pal_g
     out     dx, al
-    mov     al, blue
+    mov     al, pal_b
     out     dx, al
-    pop     bp
     ret
 
-palette macro
-    push    high(#1) + low(#2)
-    push    high(#3) + low(#4)
+stpal macro
+    push    bp, ax, bx, cx, dx
+    push    #4, #3, #2, #1
     call    set_palette
+    add     sp, 8
+    pop     dx, cx, bx, ax, bp
+#em
+
+load_palettes:
+    ret
+
+ldpals macro
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -604,29 +614,92 @@ video_fg macro
 put_pixel:
     struc [bp]
                 dw ?
-        y_pos   dw ?
-        x_pos   dw ?
-        color   dw ?
+        pix_y   db ?
+        pix_x   db ?
+        pix_pal db ?
+        pix_clr db ?
     ends
 
     mov     bp, sp
-    mov     ax, y_pos
-    mov     cx, VRAM_PITCH
-    mul     cx
-    add     ax, x_pos
+    mov     cl, pix_pal
+    shl     cl, 4
+    add     cl, pix_clr
+    mov     ah, pix_y
+    mov     al, pix_x
     mov     di, ax
     cs mov  es, back_buffer_ptr
-    mov     dx, color
-    es mov  [di], dl
+    es mov  [di], cl
     ret
 
 pixel macro
-    pusha
-    push    #3, #2, #1
+    push    bp, ax, cx, di, es
+    push    #2, #1
     call    put_pixel
-    add     sp, 6
-    popa
+    add     sp, 4
+    pop     es, di, cx, ax, bp
 #em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ hline & vline                                     ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+hline:
+    struc [bp]
+                dw ?
+        hl_y    db ?
+        hl_x    db ?
+                db ?
+        hl_w    db ?
+        hl_pal  db ?
+        hl_clr  db ?
+    ends
+    ret
+
+vline:
+    struc [bp]
+                dw ?
+        vl_y    db ?
+        vl_x    db ?
+                db ?
+        vl_h    db ?
+        vl_pal  db ?
+        vl_clr  db ?
+    ends
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ rect & fill_rect                                  ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+rect:
+    struc [bp]
+                dw ?
+        r_y     db ?
+        r_x     db ?
+        r_h     db ?
+        r_w     db ?
+        r_pal   db ?
+        r_clr   db ?
+    ends
+    ret
+
+fill_rect:
+    struc [bp]
+                dw ?
+        fr_y    db ?
+        fr_x    db ?
+        fr_h    db ?
+        fr_w    db ?
+        fr_pal  db ?
+        fr_clr  db ?
+    ends
+    ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ _is_vblank                                        ³
