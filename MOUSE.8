@@ -183,4 +183,8 @@ mouse_init:
     push    0
     call    mouse_range
     add     sp, 8
+    push    55
+    push    55
+    call    mouse_sens
+    add     sp, 4
     ret
