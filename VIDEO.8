@@ -296,7 +296,7 @@ put_string:
 s0: cs mov  al, [si]
     char    di, ax, bx, str_clr
     inc     si
-    cs add  bl, di[5]
+    cs add  bl, di[4]
     add     bl, b[str_sbc]
     dec     cx
     cmp     cx, 0

@@ -217,9 +217,14 @@ draw:
     video_bg1
     video_fg
     video_bg2
-    string  offset micro_font, 10, game_title,     04a60h, 0800h, 1
+
+    string  offset large_font, 10, game_title,     02a55h, 0100h, 0
+    string  offset large_font, 10, game_title,     02b56h, 0700h, 0
+
+    string  offset micro_font, 10, game_title,     04a60h, 0100h, 1
     string  offset micro_font, 10, game_title,     04b61h, 0700h, 1
-    string  offset micro_font, 20, game_copyright, 05a3eh, 0800h, 1
+
+    string  offset micro_font, 20, game_copyright, 05a3eh, 0100h, 1
     string  offset micro_font, 20, game_copyright, 05b3fh, 0700h, 1
     flip
     ret
