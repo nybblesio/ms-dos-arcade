@@ -620,10 +620,6 @@ put_pixel:
         pix_clr db ?
     ends
 
-    mov     bp, sp
-    mov     cl, pix_pal
-    shl     cl, 4
-    add     cl, pix_clr
     mov     ah, pix_y
     mov     al, pix_x
     mov     di, ax
@@ -646,29 +642,67 @@ pixel macro
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-hline:
+_hline:
     struc [bp]
                 dw ?
         hl_y    db ?
         hl_x    db ?
-                db ?
-        hl_w    db ?
+        hl_w    dw ?
         hl_pal  db ?
         hl_clr  db ?
     ends
+    mov     bp, sp
+    mov     bl, hl_pal
+    shl     bl, 4
+    add     bl, hl_clr
+    mov     ah, hl_y
+    mov     al, hl_x
+    mov     cx, hl_w
+    cs mov  es, back_buffer_ptr
+l0: mov     di, ax
+    es mov  [di], bl
+    inc     al
+    loop    l0
     ret
 
-vline:
+hline macro
+    push    es, bp, ax, bx, cx, di
+    push    #3, #2, #1
+    call    _hline
+    add     sp, 6
+    pop     di, cx, bx, ax, bp, es
+#em
+
+_vline:
     struc [bp]
                 dw ?
         vl_y    db ?
         vl_x    db ?
-                db ?
-        vl_h    db ?
+        vl_h    dw ?
         vl_pal  db ?
         vl_clr  db ?
     ends
+    mov     bp, sp
+    mov     bl, vl_pal
+    shl     bl, 4
+    add     bl, vl_clr
+    mov     ah, vl_y
+    mov     al, vl_x
+    mov     cx, vl_h
+    cs mov  es, back_buffer_ptr
+l0: mov     di, ax
+    es mov  [di], bl
+    inc     ah
+    loop    l0
     ret
+
+vline macro
+    push    es, bp, ax, bx, cx, di
+    push    #3, #2, #1
+    call    _vline
+    add     sp, 6
+    pop     di, cx, bx, ax, bp, es
+#em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ rect & fill_rect                                  ³
@@ -677,17 +711,38 @@ vline:
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-rect:
+_rect:
     struc [bp]
                 dw ?
-        r_y     db ?
-        r_x     db ?
+        r_pos   dw ?
         r_h     db ?
         r_w     db ?
-        r_pal   db ?
-        r_clr   db ?
+        r_clr   dw ?
     ends
+
+    mov     bp, sp
+    mov     ax, r_pos
+    xor     bx, bx
+    mov     bl, r_w
+    xor     dx, dx
+    mov     dl, r_h
+    mov     cx, r_clr
+    hline   ax, bx, cx
+    ;vline   ax, dx, r_clr
+    ;add     ah, dl
+    hline   ax, bx, r_clr
+    ;sub     ah, dl
+    ;add     al, bl
+    vline   ax, dx, r_clr
     ret
+
+rect macro
+    push    bp, ax, bx, cx, dx
+    push    #3, #2, #1
+    call    _rect
+    add     sp, 6
+    pop     dx, cx, bx, ax, bp
+#em
 
 fill_rect:
     struc [bp]
