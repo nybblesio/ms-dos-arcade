@@ -666,11 +666,11 @@ l0: mov     di, ax
     ret
 
 hline macro
-    push    es, bp, ax, bx, cx, di
+    push    es, bp, ax, bx, cx, dx, di
     push    #3, #2, #1
     call    _hline
     add     sp, 6
-    pop     di, cx, bx, ax, bp, es
+    pop     di, dx, cx, bx, ax, bp, es
 #em
 
 _vline:
@@ -697,15 +697,15 @@ l0: mov     di, ax
     ret
 
 vline macro
-    push    es, bp, ax, bx, cx, di
+    push    es, bp, ax, bx, cx, dx, di
     push    #3, #2, #1
     call    _vline
     add     sp, 6
-    pop     di, cx, bx, ax, bp, es
+    pop     di, dx, cx, bx, ax, bp, es
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ rect & fill_rect                                  ³
+;³ rect & frect                                      ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
 ;³                                                   ³
@@ -723,17 +723,19 @@ _rect:
     mov     bp, sp
     mov     ax, r_pos
     xor     bx, bx
+    xor     cx, cx
     mov     bl, r_w
-    xor     dx, dx
-    mov     dl, r_h
-    mov     cx, r_clr
-    hline   ax, bx, cx
-    ;vline   ax, dx, r_clr
-    ;add     ah, dl
+    mov     cl, r_h
     hline   ax, bx, r_clr
-    ;sub     ah, dl
-    ;add     al, bl
-    vline   ax, dx, r_clr
+    add     al, cl
+    dec     al
+    hline   ax, bx, r_clr
+    sub     al, cl
+    inc     al
+    vline   ax, cx, r_clr
+    add     ah, bl
+    dec     ah
+    vline   ax, cx, r_clr
     ret
 
 rect macro
@@ -744,17 +746,33 @@ rect macro
     pop     dx, cx, bx, ax, bp
 #em
 
-fill_rect:
+_frect:
     struc [bp]
                 dw ?
-        fr_y    db ?
-        fr_x    db ?
+        fr_pos  dw ?
         fr_h    db ?
         fr_w    db ?
-        fr_pal  db ?
-        fr_clr  db ?
+        fr_clr  dw ?
     ends
+
+    mov     bp, sp
+    mov     ax, fr_pos
+    xor     cx, cx
+    mov     cl, fr_h
+    xor     bx, bx
+    mov     bl, fr_w
+l0: hline   ax, bx, r_clr
+    inc     al
+    loop    l0
     ret
+
+frect macro
+    push    bp, ax, bx, cx, dx
+    push    #3, #2, #1
+    call    _frect
+    add     sp, 6
+    pop     dx, cx, bx, ax, bp
+#em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ _is_vblank                                        ³

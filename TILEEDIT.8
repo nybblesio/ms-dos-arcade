@@ -1,5 +1,5 @@
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ one-on-one                                        ³
+;³ tile edit                                         ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
 ;³ copyright (C) 2017 jeff panici                    ³
@@ -22,7 +22,7 @@ include video.8
 include mouse.8
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ game structures & variables                       ³
+;³ editor structures & variables                     ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
 ;³                                                   ³
@@ -33,8 +33,8 @@ even
 state               db  ?
 exit_code           db  ?
 temp_ptr            dw  ?
-game_title:         db  'ONE-ON-ONE'
-game_copyright:     db  '(C) 2017 JEFF PANICI'
+tooltitle:          db  'TILE EDIT'
+tool_copyright:     db  '(C) 2017 JEFF PANICI'
 
 inp_action struc [bp]
     inp_scan_code   db ?
@@ -43,22 +43,22 @@ ends
 
 inp_actions:
     db  KEY_LEFT
-    dw  p1_left
+    dw  cur_left
 
     db  KEY_RIGHT
-    dw  p1_right
+    dw  cur_right
 
     db  KEY_UP
-    dw  p1_up
+    dw  cur_up
 
     db  KEY_DOWN
-    dw  p1_down
+    dw  cur_down
 
     db  0
     dw  0
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ main game engine                                  ³
+;³ main tool engine                                  ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
 ;³                                                   ³
@@ -69,49 +69,18 @@ inp_actions:
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-p1_right:
-    loadspr 0
-    es add  s_x, 4
-    es cmp  s_x, 230
-    jb      >l0
-    es mov  s_x, 230
-l0: ret
-
-p1_down:
-    loadspr 0
-    es add  s_y, 4
-    es cmp  s_y, 230
-    jb      >l0
-    es mov  s_y, 230
-l0: ret
-
-p1_left:
-    loadspr 0
-    es sub  s_x, 4
-    es cmp  s_x, 10
-    ja      >l0
-    es mov  s_x, 10
-l0: ret
-
-p1_up:
-    loadspr 0
-    es sub  s_y, 4
-    es cmp  s_y, 10
-    ja      >l0
-    es mov  s_y, 10
-l0: ret
-
-timer_test:
-    reset_timer
-    loadspr 1
-    es mov  al, s_flags
-    test    al, F_SPR_ENABLED
-    jnz     >l0
-    or      al, F_SPR_ENABLED
-    jmp     >l1
-l0: and     al, not F_SPR_ENABLED
-l1: es mov  s_flags, al
+cur_right:
     ret
+
+cur_down:
+    ret
+
+cur_left:
+    ret
+
+cur_up:
+    ret
+
 ;
 ; allocate memory
 ;
@@ -128,11 +97,6 @@ allocate:
 
     alloc   TILE_BANK_SIZE / 16, offset temp_ptr
     memset  temp_ptr,   0, TILE_BANK_SIZE, 07fh
-    memset  temp_ptr,   0, 128, 07ah
-    memset  temp_ptr, 128, 128, 08ah
-    memset  temp_ptr, 256, 256, 09ah
-    memset  temp_ptr, 512, 256, 0abh
-    memset  temp_ptr, 768, 256, 0bah
     es_movm c_spr_tiles, temp_ptr
 
     alloc   VRAM_SIZE / 16, offset back_buffer_ptr
@@ -147,26 +111,18 @@ init:
     call    allocate
     mode_13
     mode_q
+    call    mouse_init
     call    init_keyboard_isr
     call    init_timer_isr
-
-    loadspr 0
-    setspr  0, 0, 10, 10, F_SPR_ENABLED, 0
-
-    ldfreetimer
-    es mov  tm_callback, timer_test
-    es mov  tm_frames, 16
-    es mov  tm_count, 16
-    es mov  tm_flags, F_TIMER_ENABLED
-
     ret
 
 ;
-; update the game state
+; update the tool state
 ;
 update:
     fire_timers
 
+    mouse
     cs mov  bp, inp_actions
     mov     cx, 4
 p0: next_key
@@ -200,27 +156,9 @@ p5: jmp     exit
 draw:
     wait_novblank
     wait_vblank
-    video_bg1
+
+    clear
     video_fg
-    video_bg2
-
-    string  offset large_font, 10, game_title,     02ah by 055h, 1 by 0, 0
-    string  offset large_font, 10, game_title,     02bh by 056h, 7 by 0, 0
-
-    string  offset micro_font, 10, game_title,     04ah by 060h, 1 by 0, 1
-    string  offset micro_font, 10, game_title,     04bh by 061h, 7 by 0, 1
-
-    string  offset micro_font, 20, game_copyright, 05ah by 03eh, 1 by 0, 1
-    string  offset micro_font, 20, game_copyright, 05bh by 03fh, 7 by 0, 1
-
-    hline   50 by 219, 21, 1 by 0
-    hline   50 by 220, 21, 7 by 0
-
-    vline   70 by 219, 21, 1 by 0
-    vline   71 by 219, 21, 7 by 0
-
-    frect   30 by 140, 110 by 15, 1 by 0
-    rect    30 by 140, 110 by 15, 7 by 0
 
     flip
     ret
@@ -234,10 +172,10 @@ start:
 ;
 ; the heart
 ;
-game_loop:
+tool_loop:
     cs call update
     cs call draw
-    jmp     game_loop
+    jmp     tool_loop
 
 ;
 ; the end

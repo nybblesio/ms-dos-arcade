@@ -49,6 +49,21 @@ cursor_pointer2:
     dw 03FC0h, 03E00h, 03600h, 02300h
     dw 00300h, 00186h, 00186h, 00000h
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё mouse_draw                                        Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё draws a mouse pointer at the current position     Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+mouse_draw:
+    ;push    es, bp, ds, ax, bx, si
+    ;call    mouse_pos
+    ;loadspr 0
+    ;es mov  s_y, dl
+    ;es mov  s_x, cl
+    ;pop     si, bx, ax, ds, bp, es
+    ret
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
 ;Ё mouse_buttons                                     Ё
