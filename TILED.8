@@ -14,6 +14,8 @@ code segment
 
 include constant.8
 include macro.8
+include string.8
+include input.8
 include control.8
 include memory.8
 include io.8
@@ -44,22 +46,24 @@ STATE_BG_BANK   equ 6
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 even
 
-state               db  STATE_NO_FILE
-exit_code           db  ?
-temp_ptr            dw  ?
-file_label:         db  'BANK FILE:'
-editor_label:       db  'EDITOR:'
-banks_label:        db  'BANKS:'
-new_label:          db  'NEW'
-load_label:         db  'LOAD'
-save_label:         db  'SAVE'
-add_label:          db  'ADD'
-remove_label:       db  'REMOVE'
-clear_label:        db  'CLEAR'
-tool_title:         db  'TILED'
-tool_version:       db  'v1.0'
-tool_author:        db  'JEFF PANICI'
-tool_copyright:     db  '(C) 2017 NYBBLES.IO'
+state               db      STATE_NO_FILE
+exit_code           db      ?
+temp_ptr            dw      ?
+fps                 db      ?
+frame_rate:         strdef  '00'
+file_label:         strdef  'BANK FILE:'
+editor_label:       strdef  'EDITOR:'
+banks_label:        strdef  'BANKS:'
+new_label:          strdef  'NEW'
+load_label:         strdef  'LOAD'
+save_label:         strdef  'SAVE'
+add_label:          strdef  'ADD'
+remove_label:       strdef  'REMOVE'
+clear_label:        strdef  'CLEAR'
+tool_title:         strdef  'TILED'
+tool_version:       strdef  'v1.0'
+tool_author:        strdef  'JEFF PANICI'
+tool_copyright:     strdef  '(C) 2017 NYBBLES.IO'
 
 state_action struc [bp]
     state_code      db ?
@@ -81,11 +85,6 @@ state_actions:
 
     db  0
     dw  0
-
-inp_action struc [bp]
-    inp_scan_code   db ?
-    inp_callback    dw ?
-ends
 
 inp_actions:
     db  KEY_LEFT
@@ -136,6 +135,16 @@ cur_left:
 cur_up:
     ret
 
+fps_timer:
+    reset_timer
+    debug
+    mov     di, frame_rate + 1
+    xor     ax, ax
+    cs mov  al, fps
+    call    put_dec2
+    cs mov  fps, 0
+    ret
+
 ;
 ; allocate memory
 ;
@@ -169,6 +178,13 @@ init:
     call    mouse_init
     call    init_keyboard_isr
     call    init_timer_isr
+
+    ldfreetimer
+    es mov  tm_callback, fps_timer
+    es mov  tm_frames, 60
+    es mov  tm_count, 60
+    es mov  tm_flags, F_TIMER_ENABLED
+
     ret
 
 ;
@@ -207,60 +223,67 @@ p5: jmp     exit
 ;   bg 2
 ;   text
 draw:
-    wait_novblank
-    wait_vblank
+    is_vblank
+    cmp     al, 0
+    jnz     >l0
+    ret
+
+l0: cs inc  fps
 
     clear
 
     frect   0 by 0, 38 by 256, 8 by 0
     vline   38 by 0, 256, 0 by 0
 
-    string  offset micro_font, 10, file_label, 2 by 42, 7 by 0, 1
-    string  offset micro_font, 7, editor_label, 2 by 206, 7 by 0, 1
+    string  offset micro_font, file_label,   42 by 2, 7 by 0, 1
+    string  offset micro_font, editor_label,206 by 2, 7 by 0, 1
 
-    string  offset micro_font, 5, tool_title,  2 by 2, 0 by 0, 1
-    string  offset micro_font, 5, tool_title,  3 by 3, 7 by 0, 1
+    string  offset micro_font, tool_title,  2 by 2, 0 by 0, 1
+    string  offset micro_font, tool_title,  3 by 3, 7 by 0, 1
 
-    string  offset micro_font, 4, tool_version, 8 by 12, 0 by 0, 0
-    string  offset micro_font, 4, tool_version, 9 by 13, 7 by 0, 0
+    string  offset micro_font, tool_version, 12 by 8, 0 by 0, 0
+    string  offset micro_font, tool_version, 13 by 9, 7 by 0, 0
 
-    hline   0 by 20, 38, 0 by 0
-    frect   21 by 0, 38 by 9, 9 by 0
-    hline   0 by 30, 38, 0 by 0
-    string  offset micro_font, 3, new_label, 23 by 8, 7 by 0, 1
+    hline   0 by 20, 38,        0 by 0
+    frect   0 by 21, 38 by 9,   9 by 0
+    hline   0 by 30, 38,        0 by 0
+    string  offset micro_font, new_label, 8 by 23, 7 by 0, 1
 
-    hline   0 by 32, 38, 0 by 0
-    frect   33 by 0, 38 by 9, 9 by 0
-    hline   0 by 42, 38, 0 by 0
-    string  offset micro_font, 4, load_label, 35 by 7, 7 by 0, 1
+    hline   0 by 32, 38,        0 by 0
+    frect   0 by 33, 38 by 9,   9 by 0
+    hline   0 by 42, 38,        0 by 0
+    string  offset micro_font, load_label, 7 by 35, 7 by 0, 1
 
-    hline   0 by 44, 38, 0 by 0
-    frect   45 by 0, 38 by 9, 9 by 0
-    hline   0 by 54, 38, 0 by 0
-    string  offset micro_font, 4, save_label, 47 by 7, 7 by 0, 1
+    hline   0 by 44, 38,        0 by 0
+    frect   0 by 45, 38 by 9,   9 by 0
+    hline   0 by 54, 38,        0 by 0
+    string  offset micro_font, save_label, 7 by 47, 7 by 0, 1
 
-    hline   38 by 189, 218, 0 by 0
-    frect   190 by 38, 218 by 9, 8 by 0
-    hline   38 by 198, 218, 0 by 0
-    string  offset micro_font, 6, banks_label, 191 by 4, 7 by 0, 1
+    hline   38 by 189, 218,     0 by 0
+    frect   38 by 190, 218 by 9,8 by 0
+    hline   38 by 198, 218,     0 by 0
+    string  offset micro_font, banks_label, 4 by 191, 7 by 0, 1
 
-    hline   0 by 200, 38, 0 by 0
-    frect   201 by 0, 38 by 9, 9 by 0
-    hline   0 by 210, 38, 0 by 0
-    string  offset micro_font, 3, add_label, 203 by 10, 7 by 0, 1
+    hline   0 by 200, 38,       0 by 0
+    frect   0 by 201, 38 by 9,  9 by 0
+    hline   0 by 210, 38,       0 by 0
+    string  offset micro_font, add_label, 10 by 203, 7 by 0, 1
 
-    hline   0 by 212, 38, 0 by 0
-    frect   213 by 0, 38 by 9, 9 by 0
-    hline   0 by 222, 38, 0 by 0
-    string  offset micro_font, 6, remove_label, 215 by 2, 7 by 0, 1
+    hline   0 by 212, 38,       0 by 0
+    frect   0 by 213, 38 by 9,  9 by 0
+    hline   0 by 222, 38,       0 by 0
+    string  offset micro_font, remove_label, 2 by 215, 7 by 0, 1
 
-    hline   0 by 224, 38, 0 by 0
-    frect   225 by 0, 38 by 9, 9 by 0
-    hline   0 by 234, 38, 0 by 0
-    string  offset micro_font, 5, clear_label, 227 by 5, 7 by 0, 1
+    hline   0 by 224, 38,       0 by 0
+    frect   0 by 225, 38 by 9,  9 by 0
+    hline   0 by 234, 38,       0 by 0
+    string  offset micro_font, clear_label, 5 by 227, 7 by 0, 1
+
+    string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
 
     mouse
     flip
+    wait_novblank
 
     ret
 

@@ -14,6 +14,8 @@ code segment
 
 include constant.8
 include macro.8
+include string.8
+include input.8
 include control.8
 include memory.8
 include io.8
@@ -29,16 +31,13 @@ include video.8
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 even
 
-state               db  ?
-exit_code           db  ?
-temp_ptr            dw  ?
-game_title:         db  'ONE-ON-ONE'
-game_copyright:     db  '(C) 2017 JEFF PANICI'
-
-inp_action struc [bp]
-    inp_scan_code   db ?
-    inp_callback    dw ?
-ends
+state               db      ?
+fps                 db      ?
+frame_rate:         strdef  '00'
+exit_code           db      ?
+temp_ptr            dw      ?
+game_title:         strdef  'ONE-ON-ONE'
+game_copyright:     strdef  '(C) 2017 JEFF PANICI'
 
 inp_actions:
     db  KEY_LEFT
@@ -100,16 +99,14 @@ p1_up:
     es mov  s_y, 10
 l0: ret
 
-timer_test:
+fps_timer:
     reset_timer
-    loadspr 1
-    es mov  al, s_flags
-    test    al, F_SPR_ENABLED
-    jnz     >l0
-    or      al, F_SPR_ENABLED
-    jmp     >l1
-l0: and     al, not F_SPR_ENABLED
-l1: es mov  s_flags, al
+    debug
+    mov     di, frame_rate + 1
+    xor     ax, ax
+    cs mov  al, fps
+    call    put_dec2
+    cs mov  fps, 0
     ret
 ;
 ; allocate memory
@@ -153,9 +150,9 @@ init:
     setspr  0, 0, 10, 10, F_SPR_ENABLED, 0
 
     ldfreetimer
-    es mov  tm_callback, timer_test
-    es mov  tm_frames, 16
-    es mov  tm_count, 16
+    es mov  tm_callback, fps_timer
+    es mov  tm_frames, 60
+    es mov  tm_count, 60
     es mov  tm_flags, F_TIMER_ENABLED
 
     ret
@@ -197,31 +194,33 @@ p5: jmp     exit
 ;   bg 2
 ;   text
 draw:
-    wait_novblank
-    wait_vblank
+    is_vblank
+    cmp     al, 0
+    jnz     >l0
+    ret
+
+l0: cs inc  fps
+
     video_bg1
     video_fg
     video_bg2
 
-    string  offset large_font, 10, game_title,     02ah by 055h, 1 by 0, 0
-    string  offset large_font, 10, game_title,     02bh by 056h, 7 by 0, 0
+    frect   50 by 33, 150 by 85, 8 by 0
+    rect    50 by 33, 150 by 85, 0 by 0
 
-    string  offset micro_font, 10, game_title,     04ah by 060h, 1 by 0, 1
-    string  offset micro_font, 10, game_title,     04bh by 061h, 7 by 0, 1
+    string  offset large_font, game_title, 88 by 45, 1 by 0, 0
+    string  offset large_font, game_title, 89 by 46, 7 by 0, 0
 
-    string  offset micro_font, 20, game_copyright, 05ah by 03eh, 1 by 0, 1
-    string  offset micro_font, 20, game_copyright, 05bh by 03fh, 7 by 0, 1
+    string  offset micro_font, game_title, 96 by 74, 1 by 0, 1
+    string  offset micro_font, game_title, 97 by 75, 7 by 0, 1
 
-    hline   50 by 219, 21, 1 by 0
-    hline   50 by 220, 21, 7 by 0
+    string  offset micro_font, game_copyright, 62 by 90, 1 by 0, 1
+    string  offset micro_font, game_copyright, 63 by 91, 7 by 0, 1
 
-    vline   70 by 219, 21, 1 by 0
-    vline   71 by 219, 21, 7 by 0
-
-    frect   30 by 140, 110 by 15, 1 by 0
-    rect    30 by 140, 110 by 15, 7 by 0
+    string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
 
     flip
+    wait_novblank
     ret
 
 ;

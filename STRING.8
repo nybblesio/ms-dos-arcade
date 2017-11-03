@@ -1,0 +1,71 @@
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ one-on-one                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ copyright (C) 2017 jeff panici                    ³
+;³ https://nybbles.io                                ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+strdef macro
+    db      #s1 - 2, #1
+#em
+
+strdefq macro
+    db      #s1, '#1'
+#em
+
+put_dec2:
+    push    es, ax
+    mov     es, cs
+    aam
+    add     ax, '00'
+    xchg    ah, al
+    stosw
+    pop     ax, es
+    ret
+
+put_dec5:
+    push    ax, bx, dx
+    xchg    dx, ax
+    mov     ax, '00'
+    cs stosw
+    cs stosw
+    push    di
+    mov     bx, 10
+    std
+l0: xchg    ax, dx
+    xor     dx, dx
+    div     bx
+    xchg    dx, ax
+    add     al, '0'
+    cs stosb
+    test    dx
+    jnz     l0
+    pop     di
+    inc     di
+    pop     dx, bx, ax
+    cld
+    ret
+
+put_hex2:
+    push    ax
+    aam     16
+    xchg    al, ah
+    add     al, 090h
+    daa
+    adc     al, 040h
+    daa
+    cs stosb
+    inc     di
+    xchg    al, ah
+    add     al, 090h
+    daa
+    adc     al, 040h
+    daa
+    cs stosb
+    inc     di
+    pop     ax
+    ret

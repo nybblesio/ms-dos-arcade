@@ -280,18 +280,21 @@ put_string:
     struc [bp]
                 dw ?
         str_fnt dw ?
-        str_len dw ?
-        str_s   dw ?
-        str_pos dw ?
+        str_ptr dw ?
+        str_y   db ?
+        str_x   db ?
         str_clr dw ?
         str_sbc dw ?
     ends
 
     mov     bp, sp
-    mov     si, str_s
+    mov     si, str_ptr
+    xor     cx, cx
+    cs mov  cl, b[si]
+    inc     si
     mov     di, str_fnt
-    mov     cx, str_len
-    mov     bx, str_pos
+    mov     bh, str_y
+    mov     bl, str_x
     xor     ax, ax
 s0: cs mov  al, [si]
     char    di, ax, bx, str_clr
@@ -302,11 +305,11 @@ s0: cs mov  al, [si]
     ret
 
 string macro
-    push    es, ds, bp, ax, bx, cx, dx, si, di
-    push    #6, #5, #4, #3, #2, #1
+    push    bp, si, di, cx, bx, ax
+    push    #5, #4, #3, #2, #1
     call    put_string
-    add     sp, 12
-    pop     di, si, dx, cx, bx, ax, bp, ds, es
+    add     sp, 10
+    pop     ax, bx, cx, di, si, bp
 #em
 
 ;旼컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴�
@@ -666,11 +669,11 @@ l0: mov     di, ax
     ret
 
 hline macro
-    push    es, bp, ax, bx, cx, dx, di
+    push    es, bp, ax, bx, cx, di
     push    #3, #2, #1
     call    _hline
     add     sp, 6
-    pop     di, dx, cx, bx, ax, bp, es
+    pop     di, cx, bx, ax, bp, es
 #em
 
 _vline:
@@ -697,11 +700,11 @@ l0: mov     di, ax
     ret
 
 vline macro
-    push    es, bp, ax, bx, cx, dx, di
+    push    es, bp, ax, bx, cx, di
     push    #3, #2, #1
     call    _vline
     add     sp, 6
-    pop     di, dx, cx, bx, ax, bp, es
+    pop     di, cx, bx, ax, bp, es
 #em
 
 ;旼컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴�
@@ -714,42 +717,57 @@ vline macro
 _rect:
     struc [bp]
                 dw ?
-        r_pos   dw ?
+        r_y     db ?
+        r_x     db ?
         r_h     db ?
         r_w     db ?
-        r_clr   dw ?
+        r_pal   db ?
+        r_clr   db ?
     ends
 
     mov     bp, sp
-    mov     ax, r_pos
-    xor     bx, bx
+    xor     dx, dx
+    mov     dl, r_pal
+    shl     dl, 4
+    add     dl, r_clr
+    mov     bh, r_y
+    mov     bl, r_x
     xor     cx, cx
-    mov     bl, r_w
+    mov     cl, r_w
+    inc     cl
+    cs mov  es, back_buffer_ptr
+l0: es mov  [bx], dl
+    add     bh, r_h
+    es mov  [bx], dl
+    sub     bh, r_h
+    inc     bl
+    loop    l0
+
     mov     cl, r_h
-    hline   ax, bx, r_clr
-    add     al, cl
-    dec     al
-    hline   ax, bx, r_clr
-    sub     al, cl
-    inc     al
-    vline   ax, cx, r_clr
-    add     ah, bl
-    dec     ah
-    vline   ax, cx, r_clr
+    mov     bh, r_y
+    mov     bl, r_x
+l1: es mov  [bx], dl
+    add     bl, r_w
+    es mov  [bx], dl
+    sub     bl, r_w
+    inc     bh
+    loop    l1
+
     ret
 
 rect macro
-    push    bp, ax, bx, cx, dx
+    push    es, bp, ax, bx, cx, dx
     push    #3, #2, #1
     call    _rect
     add     sp, 6
-    pop     dx, cx, bx, ax, bp
+    pop     dx, cx, bx, ax, bp, es
 #em
 
 _frect:
     struc [bp]
                 dw ?
-        fr_pos  dw ?
+        fr_y    db ?
+        fr_x    db ?
         fr_h    db ?
         fr_w    db ?
         fr_pal  db ?
@@ -760,7 +778,8 @@ _frect:
     mov     al, fr_pal
     shl     al, 4
     add     al, hl_clr
-    mov     bx, fr_pos
+    mov     bh, fr_y
+    mov     bl, fr_x
     mov     ch, fr_h
     mov     cl, fr_w
     cs mov  es, back_buffer_ptr
