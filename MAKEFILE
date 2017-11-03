@@ -1,0 +1,23 @@
+AS=a86
+GAME_SRCS=game.8
+TILED_SRCS=tiled.8
+
+all: game tiled
+
+game: $(GAME_SRCS)
+    $(AS) $(GAME_SRCS)
+
+tiled: $(TILED_SRCS)
+    $(AS) $(TILED_SRCS)
+
+clean:
+    del *.obj
+    del *.com
+    del *.exe
+    del *.lst
+    del *.sym
+    del *.xrf
+    del *.err
+    del *.bak
+    del *.old
+    del *.und

@@ -752,18 +752,29 @@ _frect:
         fr_pos  dw ?
         fr_h    db ?
         fr_w    db ?
-        fr_clr  dw ?
+        fr_pal  db ?
+        fr_clr  db ?
     ends
 
     mov     bp, sp
-    mov     ax, fr_pos
-    xor     cx, cx
-    mov     cl, fr_h
-    xor     bx, bx
-    mov     bl, fr_w
-l0: hline   ax, bx, r_clr
-    inc     al
-    loop    l0
+    mov     al, fr_pal
+    shl     al, 4
+    add     al, hl_clr
+    mov     bx, fr_pos
+    mov     ch, fr_h
+    mov     cl, fr_w
+    cs mov  es, back_buffer_ptr
+l0: es mov  [bx], al
+    inc     bl
+    dec     cl
+    cmp     cl, 0
+    jnz     l0
+    mov     cl, fr_w
+    sub     bl, cl
+    inc     bh
+    dec     ch
+    cmp     ch, 0
+    jnz     l0
     ret
 
 frect macro

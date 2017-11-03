@@ -67,38 +67,39 @@ mouse_draw:
     mov     es, back_buffer_ptr
     mov     si, m_bmp
     mov     di, m_pos
+    xor     ax, ax
+    xor     bx, bx
     xor     dx, dx
     mov     dh, 16
-    mov     dl, 2
-    mov     bl, 1000_0000xb
+    mov     bx, 1000_0000_0000_0000xb
+
 l0: mov     cl, 0
-
     cs mov  ax, [si]
-    and     ah, bl
+    test    ax, bx
+    jz      >l1
+    or      cl, 0000_0010xb
+
+l1: cs mov  ax, [si + 16]
+    test    ax, bx
     jz      >l2
-    mov     cl, 1
+    or      cl, 0000_0001xb
 
-l2: cs mov  ax, [si + 16]
-    and     ah, bl
-    jz      >l3
-    mov     cl, 7
+l2: cmp     cl, 0
+    jne     >l3
+    es mov  b[di], 0
+    jmp     >l4
 
-l3: cmp     cl, 0
-    je      >l1
+l3: cmp     cl, 0000_0001xb
+    jne     >l4
+    es mov  b[di], 7
 
-    es mov  b[di], cl
-
-l1: inc     di
-    shr     bl, 1
-    cmp     bl, 0
+l4: inc     di
+    shr     bx, 1
+    cmp     bx, 0
     jnz     l0
-    inc     si
-    mov     bl, 1000_0000xb
-    dec     dl
-    cmp     dl, 0
-    jne     l0
+    add     si, 2
+    mov     bx, 1000_0000_0000_0000xb
     add     di, VRAM_PITCH - 16
-    mov     dl, 2
     dec     dh
     cmp     dh, 0
     jne     l0

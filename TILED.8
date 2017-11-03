@@ -1,5 +1,5 @@
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ tile edit                                         ³
+;³ tiled editor                                      ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
 ;³ copyright (C) 2017 jeff panici                    ³
@@ -22,6 +22,20 @@ include video.8
 include mouse.8
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ editor constants                                  ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+STATE_NO_FILE   equ 1
+STATE_NO_BANK   equ 2
+STATE_SPR_BANK  equ 3
+STATE_TILE_BANK equ 4
+STATE_PAL_BANK  equ 5
+STATE_BG_BANK   equ 6
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ editor structures & variables                     ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
@@ -30,11 +44,43 @@ include mouse.8
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 even
 
-state               db  ?
+state               db  STATE_NO_FILE
 exit_code           db  ?
 temp_ptr            dw  ?
-tooltitle:          db  'TILE EDIT'
-tool_copyright:     db  '(C) 2017 JEFF PANICI'
+file_label:         db  'BANK FILE:'
+editor_label:       db  'EDITOR:'
+banks_label:        db  'BANKS:'
+new_label:          db  'NEW'
+load_label:         db  'LOAD'
+save_label:         db  'SAVE'
+add_label:          db  'ADD'
+remove_label:       db  'REMOVE'
+clear_label:        db  'CLEAR'
+tool_title:         db  'TILED'
+tool_version:       db  'v1.0'
+tool_author:        db  'JEFF PANICI'
+tool_copyright:     db  '(C) 2017 NYBBLES.IO'
+
+state_action struc [bp]
+    state_code      db ?
+    state_callback  dw ?
+ends
+
+state_actions:
+    db  STATE_NO_FILE
+    dw  no_file
+
+    db  STATE_NO_BANK
+    dw  no_bank
+
+    db  STATE_TILE_BANK
+    dw  tile_bank
+
+    db  STATE_SPR_BANK
+    dw  spr_bank
+
+    db  0
+    dw  0
 
 inp_action struc [bp]
     inp_scan_code   db ?
@@ -63,12 +109,21 @@ inp_actions:
 ;³                                                   ³
 ;³                                                   ³
 ;³                                                   ³
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+no_file:
+    ret
+
+no_bank:
+    ret
+
+tile_bank:
+    ret
+
+spr_bank:
+    frect   17 by 43, 144 by 144, 8 by 0
+    rect    42 by 16, 146 by 145, 0 by 0
+    ret
+
 cur_right:
     ret
 
@@ -156,8 +211,55 @@ draw:
     wait_vblank
 
     clear
-    mouse
 
+    frect   0 by 0, 38 by 256, 8 by 0
+    vline   38 by 0, 256, 0 by 0
+
+    string  offset micro_font, 10, file_label, 2 by 42, 7 by 0, 1
+    string  offset micro_font, 7, editor_label, 2 by 206, 7 by 0, 1
+
+    string  offset micro_font, 5, tool_title,  2 by 2, 0 by 0, 1
+    string  offset micro_font, 5, tool_title,  3 by 3, 7 by 0, 1
+
+    string  offset micro_font, 4, tool_version, 8 by 12, 0 by 0, 0
+    string  offset micro_font, 4, tool_version, 9 by 13, 7 by 0, 0
+
+    hline   0 by 20, 38, 0 by 0
+    frect   21 by 0, 38 by 9, 9 by 0
+    hline   0 by 30, 38, 0 by 0
+    string  offset micro_font, 3, new_label, 23 by 8, 7 by 0, 1
+
+    hline   0 by 32, 38, 0 by 0
+    frect   33 by 0, 38 by 9, 9 by 0
+    hline   0 by 42, 38, 0 by 0
+    string  offset micro_font, 4, load_label, 35 by 7, 7 by 0, 1
+
+    hline   0 by 44, 38, 0 by 0
+    frect   45 by 0, 38 by 9, 9 by 0
+    hline   0 by 54, 38, 0 by 0
+    string  offset micro_font, 4, save_label, 47 by 7, 7 by 0, 1
+
+    hline   38 by 189, 218, 0 by 0
+    frect   190 by 38, 218 by 9, 8 by 0
+    hline   38 by 198, 218, 0 by 0
+    string  offset micro_font, 6, banks_label, 191 by 4, 7 by 0, 1
+
+    hline   0 by 200, 38, 0 by 0
+    frect   201 by 0, 38 by 9, 9 by 0
+    hline   0 by 210, 38, 0 by 0
+    string  offset micro_font, 3, add_label, 203 by 10, 7 by 0, 1
+
+    hline   0 by 212, 38, 0 by 0
+    frect   213 by 0, 38 by 9, 9 by 0
+    hline   0 by 222, 38, 0 by 0
+    string  offset micro_font, 6, remove_label, 215 by 2, 7 by 0, 1
+
+    hline   0 by 224, 38, 0 by 0
+    frect   225 by 0, 38 by 9, 9 by 0
+    hline   0 by 234, 38, 0 by 0
+    string  offset micro_font, 5, clear_label, 227 by 5, 7 by 0, 1
+
+    mouse
     flip
 
     ret
