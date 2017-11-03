@@ -29,7 +29,7 @@ cursor_hand:
     dw 01B6Ch, 05FFCh, 05FFCh, 05FFCh
     dw 07FF8h, 03FF8h, 00000h, 00000h
 
-cursor_pointer:
+cursor_pointer1:
     dw 07FFFh, 03FFFh, 01FFFh, 00FFFh
     dw 007FFh, 003FFh, 001FFh, 000FFh
     dw 0007Fh, 0003Fh, 0001Fh, 0000Fh
@@ -57,13 +57,64 @@ cursor_pointer2:
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 mouse_draw:
-    ;push    es, bp, ds, ax, bx, si
-    ;call    mouse_pos
-    ;loadspr 0
-    ;es mov  s_y, dl
-    ;es mov  s_x, cl
-    ;pop     si, bx, ax, ds, bp, es
+    struc [bp]
+                dw ?
+        m_bmp   dw ?
+        m_pos   dw ?
+    ends
+
+    mov     bp, sp
+    mov     es, back_buffer_ptr
+    mov     si, m_bmp
+    mov     di, m_pos
+    xor     dx, dx
+    mov     dh, 16
+    mov     dl, 2
+    mov     bl, 1000_0000xb
+l0: mov     cl, 0
+
+    cs mov  ax, [si]
+    and     ah, bl
+    jz      >l2
+    mov     cl, 1
+
+l2: cs mov  ax, [si + 16]
+    and     ah, bl
+    jz      >l3
+    mov     cl, 7
+
+l3: cmp     cl, 0
+    je      >l1
+
+    es mov  b[di], cl
+
+l1: inc     di
+    shr     bl, 1
+    cmp     bl, 0
+    jnz     l0
+    inc     si
+    mov     bl, 1000_0000xb
+    dec     dl
+    cmp     dl, 0
+    jne     l0
+    add     di, VRAM_PITCH - 16
+    mov     dl, 2
+    dec     dh
+    cmp     dh, 0
+    jne     l0
     ret
+
+mouse macro
+    push    es, bp, ds, ax, bx, si
+    call    mouse_pos
+    mov     ah, dl
+    mov     al, cl
+    push    ax
+    push    cursor_pointer2
+    call    mouse_draw
+    add     sp, 4
+    pop     si, bx, ax, ds, bp, es
+#em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ mouse_buttons                                     ³

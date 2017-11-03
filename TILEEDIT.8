@@ -121,8 +121,6 @@ init:
 ;
 update:
     fire_timers
-
-    mouse
     cs mov  bp, inp_actions
     mov     cx, 4
 p0: next_key
@@ -158,9 +156,10 @@ draw:
     wait_vblank
 
     clear
-    video_fg
+    mouse
 
     flip
+
     ret
 
 ;
