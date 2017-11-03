@@ -1,0 +1,50 @@
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ one-on-one                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ copyright (C) 2017 jeff panici                    ³
+;³ https://nybbles.io                                ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ bank structures & variables                       ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+F_BNAK_BLOCK_NONE   equ 0000_0000_0000_0000xb
+F_BANK_BLOCK_DEL    equ 0000_0000_0000_0001xb
+F_BANK_BLOCK_DIRTY  equ 0000_0000_0000_0010xb
+
+bank_header struc [bp]
+    hdr_magick      dw ?
+    hdr_free        dw ?
+    hdr_block_sz    dw ?
+ends
+
+bank_block struc [bp]
+    block_type      dw ?
+    block_id        dw ?
+    block_flags     dw ?
+    block_data      db 4096 dup(?)
+ends
+
+bank_prop struc [bp]
+    prop_name       db 10 dup(?)
+    prop_data       db 54 dup(?)
+ends
+
+bank_md struc [bp]
+    md_id           dw ?
+    md_type         dw ?
+    md_flags        dw ?
+    md_blocks       dw 32 dup(?)
+    md_props        db ((type bank_prop) * 60) dup ?
+ends
+
+even

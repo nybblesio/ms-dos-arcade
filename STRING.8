@@ -28,11 +28,11 @@ put_dec2:
     ret
 
 put_dec5:
-    push    ax, bx, dx
+    push    es, ax, bx, dx
     xchg    dx, ax
     mov     ax, '00'
-    cs stosw
-    cs stosw
+    stosw
+    stosw
     push    di
     mov     bx, 10
     std
@@ -41,31 +41,31 @@ l0: xchg    ax, dx
     div     bx
     xchg    dx, ax
     add     al, '0'
-    cs stosb
+    stosb
     test    dx
     jnz     l0
     pop     di
     inc     di
-    pop     dx, bx, ax
+    pop     dx, bx, ax, es
     cld
     ret
 
 put_hex2:
-    push    ax
+    push    es, ax
     aam     16
     xchg    al, ah
     add     al, 090h
     daa
     adc     al, 040h
     daa
-    cs stosb
+    stosb
     inc     di
     xchg    al, ah
     add     al, 090h
     daa
     adc     al, 040h
     daa
-    cs stosb
+    stosb
     inc     di
-    pop     ax
+    pop     ax, es
     ret
