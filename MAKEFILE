@@ -1,14 +1,14 @@
 AS=a86
 GAME_SRCS=game.8
-TILED_SRCS=tiled.8
+BANKED_SRCS=banked.8
 
-all: game tiled
+all: game banked
 
 game: $(GAME_SRCS)
     $(AS) $(GAME_SRCS)
 
-tiled: $(TILED_SRCS)
-    $(AS) $(TILED_SRCS)
+banked: $(BANKED_SRCS)
+    $(AS) $(BANKED_SRCS)
 
 clean:
     del *.obj

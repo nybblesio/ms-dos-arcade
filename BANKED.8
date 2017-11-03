@@ -1,5 +1,5 @@
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ tiled editor                                      ³
+;³ banked                                            ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
 ;³ copyright (C) 2017 jeff panici                    ³
@@ -60,7 +60,7 @@ save_label:         strdef  'SAVE'
 add_label:          strdef  'ADD'
 remove_label:       strdef  'REMOVE'
 clear_label:        strdef  'CLEAR'
-tool_title:         strdef  'TILED'
+tool_title:         strdef  'BANKED'
 tool_version:       strdef  'v1.0'
 tool_author:        strdef  'JEFF PANICI'
 tool_copyright:     strdef  '(C) 2017 NYBBLES.IO'
@@ -238,11 +238,11 @@ l0: cs inc  fps
     string  offset micro_font, file_label,   42 by 2, 7 by 0, 1
     string  offset micro_font, editor_label,206 by 2, 7 by 0, 1
 
-    string  offset micro_font, tool_title,  2 by 2, 0 by 0, 1
-    string  offset micro_font, tool_title,  3 by 3, 7 by 0, 1
+    string  offset micro_font, tool_title,  1 by 2, 0 by 0, 1
+    string  offset micro_font, tool_title,  2 by 3, 7 by 0, 1
 
-    string  offset micro_font, tool_version, 12 by 8, 0 by 0, 0
-    string  offset micro_font, tool_version, 13 by 9, 7 by 0, 0
+    string  offset micro_font, tool_version, 16 by 8, 0 by 0, 0
+    string  offset micro_font, tool_version, 17 by 9, 7 by 0, 0
 
     hline   0 by 20, 38,        0 by 0
     frect   0 by 21, 38 by 9,   9 by 0
