@@ -181,6 +181,7 @@ font_init:
     mov     f_offset, ax
     mov     f_width, 8
     mov     f_height, 8
+    mov     f_mask, 1000_0000xb
 
     mov     ax, 01130h
     mov     bx, 0200h
@@ -192,99 +193,35 @@ font_init:
     mov     f_offset, ax
     mov     f_width, 8
     mov     f_height, 14
+    mov     f_mask, 1000_0000xb
 
     mov     bp, offset micro_font
     mov     f_segment, cs
     mov     f_offset, offset micro_font_bits
     mov     f_width, 5
     mov     f_height, 5
+    mov     f_mask, 0001_0000xb
 
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ put_char                                          ³
+;³ string generators                                 ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
-;³ this function accepts the struc on the stack      ³
-;³ and uses the BIOS font data to render a single    ³
-;³ ASCII character to the back_buffer_ptr.           ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-put_char:
-    struc [bp]
-                dw ?
-        chr_fnt dw ?
-        chr_v   dw ?
-        chr_pos dw ?
-        chr_pal db ?
-        chr_clr db ?
-    ends
-
-    mov     bp, sp
-    mov     dx, chr_pos
-    mov     bl, chr_pal
-    shl     bl, 4
-    add     bl, chr_clr
-
-    mov     ax, chr_v
-    mov     bp, chr_fnt
-    mul     f_height
-    mov     si, ax
-    add     si, f_offset
-    mov     ds, f_segment
-
-    xor     ax, ax
-    mov     ah, f_width
-    dec     ah
-    mov     al, 1
-    mov     cl, ah
-    shl     al, cl
-    mov     ah, al
-    xor     cx, cx
-    mov     ch, f_height
-    cs mov  es, back_buffer_ptr
-c0: ds mov  bh, [si]
-c1: mov     cl, bh
-    and     cl, al
-    cmp     cl, 0
-    je      >c2
-    mov     di, dx
-    es mov  [di], bl
-c2: inc     dl
-    shr     al, 1
-    cmp     al, 0
-    jne     c1
-    inc     si
-    mov     al, ah
-    inc     dh
-    sub     dl, f_width
-    dec     ch
-    cmp     ch, 0
-    jne     c0
-    ret
-
-char macro
-    push    es, ds, bp, ax, bx, cx, dx, di, si
-    push    #4, #3, #2, #1
-    call    put_char
-    add     sp, 8
-    pop     si, di, dx, cx, bx, ax, bp, ds, es
-#em
-
-;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ put_string                                        ³
-;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
-;³ accepts a struc on the stack and draws the string ³
-;³ one character at a time using the put_char        ³
-;³ function.                                         ³
-;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-put_string:
+_string:
     struc [bp]
                 dw ?
         str_fnt dw ?
         str_ptr dw ?
         str_y   db ?
         str_x   db ?
-        str_clr dw ?
-        str_sbc dw ?
+        str_pal db ?
+        str_clr db ?
+        str_pad db ?
+        str_sbc db ?
     ends
 
     mov     bp, sp
@@ -292,28 +229,53 @@ put_string:
     xor     cx, cx
     cs mov  cl, b[si]
     inc     si
-    mov     di, str_fnt
     mov     bh, str_y
     mov     bl, str_x
-    xor     ax, ax
-s0: cs mov  al, [si]
-    char    di, ax, bx, str_clr
+    mov     dl, str_pal
+    shl     dl, 4
+    add     dl, str_clr
+    mov     dh, str_sbc
+    mov     bp, str_fnt
+    mov     ds, f_segment
+    cs mov  es, back_buffer_ptr
+s0: push    bx, cx, dx
+    cs mov  al, [si]
+    mul     f_height
+    mov     di, f_offset
+    add     di, ax
+    mov     dh, f_width
+    mov     ch, f_height
+c0: mov     ah, f_mask
+    ds mov  al, [di]
+c1: mov     cl, al
+    and     cl, ah
+    jz      >c2
+    es mov  [bx], dl
+c2: inc     bl
+    shr     ah, 1
+    jne     c1
+    inc     di
+    inc     bh
+    sub     bl, dh
+    dec     ch
+    jne     c0
+    pop     dx, cx, bx
     inc     si
-    cs add  bl, di[4]
-    add     bl, b[str_sbc]
+    cs add  bl, f_width
+    add     bl, dh
     loop    s0
     ret
 
 string macro
-    push    bp, si, di, cx, bx, ax
+    push    bp, si, di, ax, bx, cx, dx
     push    #5, #4, #3, #2, #1
-    call    put_string
+    call    _string
     add     sp, 10
-    pop     ax, bx, cx, di, si, bp
+    pop     dx, cx, bx, ax, di, si, bp
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ clear_page                                        ³
+;³ vram and back buffer                              ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
 ;³                                                   ³
@@ -334,13 +296,6 @@ clear macro
     pop     ax, cx, di, es
 #em
 
-;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ copy_page                                         ³
-;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
-;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 copy_page:
     cs mov  ds, back_buffer_ptr
     mov     es, VRAM
@@ -374,7 +329,7 @@ scroff macro
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ set_palette                                       ³
+;³ palettes                                          ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
 ;³                                                   ³
@@ -421,47 +376,14 @@ ldpals macro
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ put_tile                                          ³
+;³ background generators                             ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-put_tile:
-    es mov  cl, t_pal
-    shl     cl, 4
-    xor     dx, dx
-    cs mov  es, back_buffer_ptr
-    mov     bh, TILE_LINES
-    mov     bl, TILE_WIDTH
-l0: ds mov  dl, [si]
-    mov     ch, dl
-    shr     ch, 4
-    and     ch, 0fh
-    cmp     ch, 0
-    jz      >l1
-    add     ch, cl
-    mov     di, ax
-    es mov  [di], ch
-l1: inc     al
-    and     dl, 0fh
-    cmp     dl, 0
-    jz      >l2
-    add     dl, cl
-    mov     di, ax
-    es mov  [di], dl
-l2: inc     al
-    inc     si
-    dec     bl
-    jnz     l0
-    mov     bl, TILE_WIDTH
-    inc     ah
-    sub     al, TILE_WIDTH * 2
-    dec     bh
-    jnz     l0
-    ret
-
 ldbg1 macro
+    push    ax, bx
     cs mov  es, ctrl_ram_ptr
     mov     bp, 0
     es mov  ds, c_bg_tiles
@@ -470,33 +392,51 @@ ldbg1 macro
     shl     ax, (type tile) / 2
     add     bp, ax
     es mov  ax, t_tile
-    push    dx
     mov     bx, TILE_WIDTH * TILE_LINES
     mul     bx
-    pop     dx
     mov     si, ax
+    pop     bx, ax
 #em
 
 _video_bg1:
     xor     di, di
-    xor     cx, cx
-    mov     bh, 32
-    mov     bl, 32
-l0: push    es, ax, bx, cx, dx, di
-    ldbg1   di
-    mov     ax, cx
-    call    put_tile
-    pop     di, dx, cx, bx, ax, es
+    xor     bx, bx
+    mov     ch, 32
+    mov     cl, 32
+l0: ldbg1   di
+
+    push    bx, cx
+    es mov  dl, t_pal
+    shl     dl, 4
+    cs mov  es, back_buffer_ptr
+    mov     ch, TILE_LINES
+    mov     cl, TILE_WIDTH
+l1: ds mov  al, [si]
+    aam     16
+    add     ah, dl
+    es mov  [bx], ah
+    inc     bl
+    add     al, dl
+    es mov  [bx], al
+    inc     bl
+    inc     si
+    dec     cl
+    jnz     l1
+    mov     cl, TILE_WIDTH
+    inc     bh
+    sub     bl, TILE_WIDTH * 2
+    dec     ch
+    jnz     l1
+    pop     cx, bx
+
     inc     di
-    add     cl, 8
-    dec     bl
-    cmp     bl, 0
+    add     bl, TILE_WIDTH * 2
+    dec     cl
     jne     l0
-    mov     cl, 0
-    add     ch, 8
-    mov     bl, 32
-    dec     bh
-    cmp     bh, 0
+    mov     bl, 0
+    add     bh, TILE_LINES
+    mov     cl, 32
+    dec     ch
     jne     l0
     ret
 
@@ -506,8 +446,70 @@ video_bg1 macro
     pop     di, si, dx, cx, bx, ax, bp, ds, es
 #em
 
+ldbg2 macro
+    push    bx, dx
+    cs mov  es, ctrl_ram_ptr
+    mov     bp, 0
+    es mov  ds, c_bg_tiles
+    es mov  bp, offset c_bg2
+    mov     ax, #1
+    shl     ax, (type tile) / 2
+    add     bp, ax
+    es mov  ax, t_tile
+    mov     bx, TILE_WIDTH * TILE_LINES
+    mul     bx
+    mov     si, ax
+    pop     dx, bx
+#em
+
 _video_bg2:
-    ret
+    xor     di, di
+    xor     bx, bx
+    mov     ch, 32
+    mov     cl, 32
+l0: ldbg2   di
+    es mov  ax, t_tile
+    cmp     ax, 0
+    jz      >l4
+    push    bx, cx
+    es mov  dl, t_pal
+    shl     dl, 4
+    cs mov  es, back_buffer_ptr
+    mov     ch, TILE_LINES
+    mov     cl, TILE_WIDTH
+l1: ds mov  al, [si]
+    aam     16
+    cmp     ah, 0
+    jz      >l2
+    add     ah, dl
+    es mov  [bx], ah
+l2: inc     bl
+    cmp     al, 0
+    jz      >l3
+    add     al, dl
+    es mov  [bx], al
+l3: inc     bl
+    inc     si
+    dec     cl
+    jnz     l1
+    mov     cl, TILE_WIDTH
+    inc     bh
+    sub     bl, TILE_WIDTH * 2
+    dec     ch
+    jnz     l1
+    pop     cx, bx
+l4: inc     di
+    add     bl, TILE_WIDTH * 2
+    dec     cl
+    jz      >l5
+    jmp     l0
+l5: mov     bl, 0
+    add     bh, TILE_LINES
+    mov     cl, 32
+    dec     ch
+    jz      >l6
+    jmp     l0
+l6: ret
 
 video_bg2 macro
     push    es, ds, bp, ax, bx, cx, dx, si, di
@@ -516,50 +518,15 @@ video_bg2 macro
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ put_sprite                                        ³
+;³ sprite generators                                 ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-put_sprite:
-    es mov  ah, s_y
-    es mov  al, s_x
-    es mov  cl, s_pal
-    shl     cl, 4
-    add     cl, 128
-    xor     dx, dx
-    cs mov  es, back_buffer_ptr
-    mov     bh, SPR_LINES
-    mov     bl, SPR_WIDTH
-l0: ds mov  dl, [si]
-    mov     ch, dl
-    shr     ch, 4
-    and     ch, 0fh
-    cmp     ch, 0
-    jz      >l1
-    add     ch, cl
-    mov     di, ax
-    es mov  [di], ch
-l1: inc     al
-    and     dl, 0fh
-    cmp     dl, 0
-    jz      >l2
-    add     dl, cl
-    mov     di, ax
-    es mov  [di], dl
-l2: inc     al
-    inc     si
-    dec     bl
-    jnz     l0
-    mov     bl, SPR_WIDTH
-    inc     ah
-    sub     al, SPR_WIDTH * 2
-    dec     bh
-    jnz     l0
-    ret
 
 loadspr macro
+    push    cx, dx
     cs mov  es, ctrl_ram_ptr
     mov     bp, 0
     es mov  ds, c_spr_tiles
@@ -568,11 +535,10 @@ loadspr macro
     shl     ax, (type sprite) / 2
     add     bp, ax
     es mov  ax, s_tile
-    push    dx
     mov     bx, SPR_WIDTH * SPR_LINES
     mul     bx
-    pop     dx
     mov     si, ax
+    pop     dx, cx
 #em
 
 setspr macro
@@ -585,21 +551,46 @@ setspr macro
 #em
 
 _video_fg:
-    xor     cx, cx
-    mov     cl, 0ffh
+    mov     cx, 0ffh
 l0: loadspr cx
     es mov  al, s_flags
-    and     al, F_SPR_ENABLED
-    cmp     al, 0
-    jz      >l1
-    push    es, cx
-    cs call put_sprite
-    pop     cx, es
-l1: cmp     cl, 0
+    test    al, F_SPR_ENABLED
+    jz      >l4
+    es mov  dl, s_pal
+    shl     dl, 4
+    add     dl, 128
+    es mov  bh, s_y
+    es mov  bl, s_x
+    push    cx
+    cs mov  es, back_buffer_ptr
+    mov     ch, SPR_LINES
+    mov     cl, SPR_WIDTH
+l1: ds mov  al, [si]
+    aam     16
+    cmp     ah, 0
     jz      >l2
+    add     ah, dl
+    es mov  [bx], ah
+l2: inc     bl
+    cmp     al, 0
+    jz      >l3
+    add     al, dl
+    es mov  [bx], al
+l3: inc     bl
+    inc     si
     dec     cl
+    jnz     l1
+    mov     cl, SPR_WIDTH
+    inc     bh
+    sub     bl, SPR_WIDTH * 2
+    dec     ch
+    jnz     l1
+    pop     cx
+l4: cmp     cx, 0
+    jz      >l5
+    dec     cx
     jmp     l0
-l2: ret
+l5: ret
 
 video_fg macro
     push    es, ds, bp, ax, bx, cx, dx, si, di

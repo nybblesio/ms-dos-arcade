@@ -148,7 +148,7 @@ init:
     call    init_timer_isr
 
     loadspr 0
-    setspr  0, 0, 10, 10, F_SPR_ENABLED, 0
+    setspr  0, 0, 100, 10, F_SPR_ENABLED, 0
 
     ldfreetimer
     es mov  tm_callback, fps_timer
