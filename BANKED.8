@@ -31,12 +31,17 @@ include mouse.8
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
 STATE_NO_FILE   equ 1
 STATE_NO_BANK   equ 2
 STATE_SPR_BANK  equ 3
 STATE_TILE_BANK equ 4
 STATE_PAL_BANK  equ 5
 STATE_BG_BANK   equ 6
+
+F_BTN_NONE      equ 0000_0000_0000_0000xb
+F_BTN_ENABLED   equ 0000_0000_0000_0001xb
+F_BTN_END       equ 1000_0000_0000_0000xb
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ editor structures & variables                     ³
@@ -45,12 +50,34 @@ STATE_BG_BANK   equ 6
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+state_action struc [bp]
+    state_code      db ?
+    state_callback  dw ?
+ends
+
+button struc [bp]
+    btn_flags   dw ?
+    btn_txt     dw ?
+    btn_txt_pos dw ?
+    btn_pos     dw ?
+    btn_size    dw ?
+    btn_func    dw ?
+ends
+
+buttondef macro
+    dw #1, #2, #3, #4, #5, #6
+#em
+
 even
 
 state               db      STATE_NO_FILE
 exit_code           db      ?
 temp_ptr            dw      ?
 fps                 db      ?
+caret_vis           db      ?
+caret_pos           dw      ?
+
 frame_rate:         strdef  '00'
 file_label:         strdef  'BANK FILE:'
 editor_label:       strdef  'EDITOR:'
@@ -58,6 +85,7 @@ banks_label:        strdef  'BANKS:'
 new_label:          strdef  'NEW'
 load_label:         strdef  'LOAD'
 save_label:         strdef  'SAVE'
+exit_label:         strdef  'EXIT'
 add_label:          strdef  'ADD'
 remove_label:       strdef  'REMOVE'
 clear_label:        strdef  'CLEAR'
@@ -66,10 +94,15 @@ tool_version:       strdef  'v1.0'
 tool_author:        strdef  'JEFF PANICI'
 tool_copyright:     strdef  '(C) 2017 NYBBLES.IO'
 
-state_action struc [bp]
-    state_code      db ?
-    state_callback  dw ?
-ends
+buttons:
+btn_new:            buttondef F_BTN_ENABLED, new_label,    8 by 23,  0 by 20,  38 by 10, 0
+btn_load:           buttondef F_BTN_ENABLED, load_label,   7 by 35,  0 by 32,  38 by 10, 0
+btn_save:           buttondef F_BTN_NONE,    save_label,   7 by 47,  0 by 44,  38 by 10, 0
+btn_exit:           buttondef F_BTN_ENABLED, exit_label,   7 by 59,  0 by 56,  38 by 10, 0
+btn_add:            buttondef F_BTN_NONE,    add_label,   10 by 203, 0 by 200, 38 by 10, 0
+btn_remove:         buttondef F_BTN_NONE,    remove_label, 2 by 215, 0 by 212, 38 by 10, 0
+btn_clear:          buttondef F_BTN_NONE,    clear_label,  5 by 227, 0 by 224, 38 by 10, 0
+                    buttondef F_BTN_END,     0,            0,        0,        0
 
 state_actions:
     db  STATE_NO_FILE
@@ -110,6 +143,15 @@ inp_actions:
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+draw_caret:
+    cs mov  al, caret_vis
+    cmp     al, 0
+    jz      >l0
+    cs mov  ax, caret_pos
+    frect   ax, 5 by 5, 7 by 0
+l0: ret
+
 no_file:
     ret
 
@@ -138,12 +180,16 @@ cur_up:
 
 fps_timer:
     reset_timer
-    debug
     mov     di, frame_rate + 1
     xor     ax, ax
     cs mov  al, fps
     call    put_dec2
     cs mov  fps, 0
+    ret
+
+caret_timer:
+    reset_timer
+    not     caret_vis
     ret
 
 ;
@@ -186,6 +232,13 @@ init:
     es mov  tm_count, 60
     es mov  tm_flags, F_TIMER_ENABLED
 
+    ldfreetimer
+    es mov  tm_callback, caret_timer
+    es mov  tm_frames, 25
+    es mov  tm_count, 25
+    es mov  tm_flags, F_TIMER_ENABLED
+
+    cs mov  caret_pos, 42 by 10
     ret
 
 ;
@@ -232,6 +285,7 @@ draw:
 l0: cs inc  fps
 
     clear
+    call    draw_caret
 
     frect   0 by 0, 38 by 256, 8 by 0
     vline   38 by 0, 256, 0 by 0
@@ -245,43 +299,33 @@ l0: cs inc  fps
     string  offset micro_font, tool_version, 16 by 8, 0 by 0, 0
     string  offset micro_font, tool_version, 17 by 9, 7 by 0, 0
 
-    hline   0 by 20, 38,        0 by 0
-    frect   0 by 21, 38 by 9,   9 by 0
-    hline   0 by 30, 38,        0 by 0
-    string  offset micro_font, new_label, 8 by 23, 7 by 0, 1
-
-    hline   0 by 32, 38,        0 by 0
-    frect   0 by 33, 38 by 9,   9 by 0
-    hline   0 by 42, 38,        0 by 0
-    string  offset micro_font, load_label, 7 by 35, 7 by 0, 1
-
-    hline   0 by 44, 38,        0 by 0
-    frect   0 by 45, 38 by 9,   9 by 0
-    hline   0 by 54, 38,        0 by 0
-    string  offset micro_font, save_label, 7 by 47, 7 by 0, 1
-
     hline   38 by 189, 218,     0 by 0
     frect   38 by 190, 218 by 9,8 by 0
     hline   38 by 198, 218,     0 by 0
     string  offset micro_font, banks_label, 4 by 191, 7 by 0, 1
 
-    hline   0 by 200, 38,       0 by 0
-    frect   0 by 201, 38 by 9,  9 by 0
-    hline   0 by 210, 38,       0 by 0
-    string  offset micro_font, add_label, 10 by 203, 7 by 0, 1
+    cs mov  bp, buttons
+l1: cs mov  ax, btn_flags
+    test    ax, F_BTN_END
+    jz      >l2
+    jmp     long >l5
+l2: test    ax, F_BTN_ENABLED
+    jz      >l4
+l3: cs mov  ax, btn_pos
+    cs mov  cx, btn_size
+    xor     bx, bx
+    mov     bl, ch
+    frect   ax, cx, 9 by 0
+    hline   ax, bx, 0 by 0
+    cs mov  si, btn_txt
+    cs mov  dx, btn_txt_pos
+    string  offset micro_font, si, dx, 7 by 0, 1
+    add     al, cl
+    hline   ax, bx, 0 by 0
+l4: add     bp, type button
+    jmp     l1
 
-    hline   0 by 212, 38,       0 by 0
-    frect   0 by 213, 38 by 9,  9 by 0
-    hline   0 by 222, 38,       0 by 0
-    string  offset micro_font, remove_label, 2 by 215, 7 by 0, 1
-
-    hline   0 by 224, 38,       0 by 0
-    frect   0 by 225, 38 by 9,  9 by 0
-    hline   0 by 234, 38,       0 by 0
-    string  offset micro_font, clear_label, 5 by 227, 7 by 0, 1
-
-    string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
-
+l5: string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
     mouse
     flip
     wait_novblank
