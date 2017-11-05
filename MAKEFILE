@@ -1,14 +1,15 @@
 AS=a86
+AS_FLAGS=DEBUG
 GAME_SRCS=game.8
 BANKED_SRCS=banked.8
 
 all: game banked
 
 game: $(GAME_SRCS)
-    $(AS) $(GAME_SRCS)
+    $(AS) =$(AS_FLAGS) $(GAME_SRCS)
 
 banked: $(BANKED_SRCS)
-    $(AS) $(BANKED_SRCS)
+    $(AS) =$(AS_FLAGS) $(BANKED_SRCS)
 
 clean:
     del *.obj

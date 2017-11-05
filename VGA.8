@@ -1,0 +1,326 @@
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ one-on-one                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ copyright (C) 2017 jeff panici                    ³
+;³ https://nybbles.io                                ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+CRT_IC      equ 03d4h
+CRT_IM      equ 03b4h
+ATT_IW      equ 03c0h
+GRA_I       equ 03ceh
+SEQ_I       equ 03c4h
+PEL_IW      equ 03c8h
+PEL_IR      equ 03c7h
+
+CRT_DC      equ 03d5h
+CRT_DM      equ 03b5h
+ATT_R       equ 03c1h
+GRA_D       equ 03cfh
+SEQ_D       equ 03c5h
+MIS_R       equ 03cch
+MIS_W       equ 03c2h
+IS1_RC      equ 03dah
+IS1_RM      equ 03bah
+PEL_D       equ 03c9h
+PEL_MSK     equ 03c6h
+
+VRAM        equ 0a000h
+VRAM_SIZE   equ 0ffffh
+VRAM_PITCH  equ 256
+
+vga_reg_cfg struc [bp]
+    vga_reg     dw ?
+    vga_func    db ?
+    vga_value   db ?
+    vga_flags   db ?
+    vga_pad     db ?
+ends
+
+even
+
+modeq_params:
+    ; misc output
+    dw  032ch
+    db  00h,  0e3h,  0, 0
+
+    ; horizonal total
+    dw  03d4h
+    db  00h,  05fh,  0, 0
+
+    ; horizontal display enable end
+    dw  03d4h
+    db  01h,  03fh,  0, 0
+
+    ; horizontal blank start
+    dw  03d4h
+    db  02h,  040h,  0, 0
+
+    ; horizontal blank end
+    dw  03d4h
+    db  03h,  082h,  0, 0
+
+    ; horizontal retrace start
+    dw  03d4h
+    db  04h,  04ah,  0, 0
+
+    ; horizontal retrace end
+    dw  03d4h
+    db  05h,  09ah,  0, 0
+
+    ; vertical total
+    dw  03d4h
+    db  06h,  023h,  0, 0
+
+    ; overflow register
+    dw  03d4h
+    db  07h,  0b2h,  0, 0
+
+    ; preset row scan
+    dw  03d4h
+    db  08h,     0,  0, 0
+
+    ; max scan line/char horizontal time
+    dw  03d4h
+    db  09h,  061h,  0, 0
+
+    ; vertical retrace start
+    dw  03d4h
+    db  010h,  0ah,  0, 0
+
+    ; vertical retrace end
+    dw  03d4h
+    db  011h, 0ach,  0, 0
+
+    ; vertical display enable end
+    dw  03d4h
+    db  012h, 0ffh,  0, 0
+
+    ; offset/logical width
+    dw  03d4h
+    db  013h, 020h,  0, 0
+
+    ; underline location
+    dw  03d4h
+    db  014h, 040h,  0, 0
+
+    ; vertical blank start
+    dw  03d4h
+    db  015h,  07h,  0, 0
+
+    ; vertical blank end
+    dw  03d4h
+    db  016h, 01ah,  0, 0
+
+    ; mode control
+    dw  03d4h
+    db  017h, 0a3h,  0, 0
+
+    ; clock mode register
+    dw  03c4h
+    db  01h,     1,  0, 0
+
+    ; memory mode register
+    dw  03c4h
+    db  04h,   0eh,  0, 0
+
+    ; mode register
+    dw  03ceh
+    db  05h,  040h,  0, 0
+
+    ; misc register
+    dw  03ceh
+    db  06h,   05h,  0, 0
+
+    ; mode control
+    dw  03c0h
+    db  010h, 041h, 32, 0
+
+    ; horizontal panning
+    dw  03c0h
+    db  013h,    0, 32, 0
+
+    ; end marker
+    dw  0
+    db  0,       0,  0, 0
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ screen control macros                             ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+scron macro
+    push    ax, dx
+    inp     IS1_RC
+    outp    ATT_IW, 020h
+    pop     dx, ax
+#em
+
+scroff macro
+    push    ax, dx
+    inp     IS1_RC
+    outp    ATT_IW, 0
+    pop     dx, ax
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ palettes                                          ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+store_palette:
+    struc [bp]
+                dw ?
+                db ?
+        pal_n   db ?
+                db ?
+        pal_r   db ?
+                db ?
+        pal_g   db ?
+                db ?
+        pal_b   db ?
+    ends
+
+    mov     bp, sp
+    mov     dx, PEL_IW
+    mov     al, pal_n
+    out     dx, al
+    mov     dx, PEL_D
+    mov     al, pal_r
+    out     dx, al
+    mov     al, pal_g
+    out     dx, al
+    mov     al, pal_b
+    out     dx, al
+    ret
+
+stpal macro
+    push    bp, ax, bx, cx, dx
+    push    #4, #3, #2, #1
+    call    set_palette
+    add     sp, 8
+    pop     dx, cx, bx, ax, bp
+#em
+
+load_palettes:
+    ret
+
+ldpals macro
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ vblank routines                                   ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_is_vblank:
+    mov     dx, IS1_RC
+    in      al, dx
+    and     al, 00001000xb
+    ret
+
+is_vblank macro
+    push    dx
+    call    _is_vblank
+    pop     dx
+#em
+
+_wait_vblank:
+l0: mov     dx, IS1_RC
+    in      al, dx
+    and     al, 00001000xb
+    jz      l0
+    ret
+
+wait_vblank macro
+    push    dx, ax
+    call    _wait_vblank
+    pop     ax, dx
+#em
+
+_wait_novblank:
+l0: mov     dx, IS1_RC
+    in      al, dx
+    and     al, 00001000xb
+    jnz     l0
+    ret
+
+wait_novblank macro
+    push    dx, ax
+    call    _wait_novblank
+    pop     ax, dx
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ graphics mode functions & macros                  ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+mode_13 macro
+    mov     ah, 0
+    mov     al, 13h
+    int     10h
+    call    font_init
+#em
+
+mode_03 macro
+    mov     ah, 0
+    mov     al, 3
+    int     10h
+#em
+
+_mode_prg:
+    mov     dx, CRT_IC
+    mov     al, 011h
+    out     dx, al
+    inc     dx
+    in      al, dx
+    and     al, 07fh
+    mov     ah, al
+    mov     al, 011h
+    dec     dx
+    out     dx, ax
+l2: mov     dx, vga_reg
+    cmp     dx, 0
+    je      >l0
+    mov     al, vga_func
+    mov     bl, vga_flags
+    cmp     bl, 0
+    jz      >l1
+    add     al, bl
+l1: out     dx, al
+    inc     dx
+    mov     al, vga_value
+    out     dx, al
+    add     bp, type vga_reg_cfg
+    jmp     l2
+l0: mov     dx, CRT_IC
+    mov     al, 011h
+    out     dx, al
+    inc     dx
+    in      al, dx
+    or      al, 080h
+    mov     ah, al
+    mov     al, 011h
+    dec     dx
+    out     dx, ax
+    ret
+
+mode_p macro
+    push    bp, ax, bx, dx
+    mov     bp, #1
+    call    _mode_prg
+    pop     dx, bx, ax, bp
+#em

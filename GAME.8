@@ -21,6 +21,7 @@ include memory.8
 include io.8
 include bank.8
 include timer.8
+include vga.8
 include video.8
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -34,27 +35,20 @@ even
 
 state               db      ?
 fps                 db      ?
-frame_rate:         strdef  '00'
 exit_code           db      ?
 temp_ptr            dw      ?
+draw_flag           db      ?
+
+frame_rate:         strdef  '00'
 game_title:         strdef  'ONE-ON-ONE'
 game_copyright:     strdef  '(C) 2017 JEFF PANICI'
 
-inp_actions:
-    db  KEY_LEFT
-    dw  p1_left
-
-    db  KEY_RIGHT
-    dw  p1_right
-
-    db  KEY_UP
-    dw  p1_up
-
-    db  KEY_DOWN
-    dw  p1_down
-
-    db  0
-    dw  0
+input_actions:
+    defie   T_INPUT_KEY, K_LEFT,  p1_left,  0, 0
+    defie   T_INPUT_KEY, K_RIGHT, p1_right, 0, 0
+    defie   T_INPUT_KEY, K_UP,    p1_up,    0, 0
+    defie   T_INPUT_KEY, K_DOWN,  p1_down,  0, 0
+    defie   0,           0,       0,        0, 0
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ main game engine                                  ³
@@ -102,7 +96,6 @@ l0: ret
 
 fps_timer:
     reset_timer
-    debug
     mov     di, frame_rate + 1
     xor     ax, ax
     cs mov  al, fps
@@ -143,7 +136,7 @@ allocate:
 init:
     call    allocate
     mode_13
-    mode_q
+    mode_p  modeq_params
     call    init_keyboard_isr
     call    init_timer_isr
 
@@ -164,26 +157,26 @@ init:
 update:
     fire_timers
 
-    cs mov  bp, inp_actions
+    cs mov  bp, input_actions
     mov     cx, 4
 p0: next_key
     cmp     al, 0
     je      >p4
-    cmp     al, KEY_ESC
+    cmp     al, K_ESC
     je      >p5
     dec     cx
     cmp     cx, 0
     jz      >p4
-p1: cs mov  bl, inp_scan_code
+p1: cs mov  bl, ia_code
     cmp     bl, 0
     jnz     >p2
-    cs mov  bp, inp_actions
+    cs mov  bp, input_actions
     jmp     p0
 p2: cmp     al, bl
     je      >p3
-    cs add  bp, type inp_action
+    cs add  bp, type input_action
     jmp     p1
-p3: cs call [inp_callback]
+p3: cs call [ia_callback]
     jmp     p0
 p4: ret
 p5: jmp     exit
@@ -194,18 +187,8 @@ p5: jmp     exit
 ;   fg
 ;   bg 2
 ;   text
-draw:
-    is_vblank
-    cmp     al, 0
-    jnz     >l0
-    ret
 
-l0: cs inc  fps
-
-    video_bg1
-    video_fg
-    video_bg2
-
+draw_title:
     frect   50 by 33, 150 by 85, 8 by 0
     rect    50 by 33, 150 by 85, 0 by 0
 
@@ -218,10 +201,31 @@ l0: cs inc  fps
     string  offset micro_font, game_copyright, 62 by 90, 1 by 0, 1
     string  offset micro_font, game_copyright, 63 by 91, 7 by 0, 1
 
-    string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
+    ret
 
-    flip
+draw:
+    cs cmp  draw_flag, 1
+    je      >l0
+    ret
+l0: cs mov  draw_flag, 0
+    video_bg1
+    video_fg
+    video_bg2
+    call    draw_title
+#if DEBUG
+    string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
+#endif
+    ret
+
+show:
+    is_vblank
+    cmp     al, 0
+    jnz     >l0
+    ret
+l0: flip
     wait_novblank
+    cs inc  fps
+    cs mov  draw_flag, 1
     ret
 
 ;
@@ -236,6 +240,7 @@ start:
 game_loop:
     cs call update
     cs call draw
+    cs call show
     jmp     game_loop
 
 ;

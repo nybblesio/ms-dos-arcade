@@ -21,6 +21,7 @@ include memory.8
 include io.8
 include bank.8
 include timer.8
+include vga.8
 include video.8
 include mouse.8
 
@@ -77,6 +78,8 @@ temp_ptr            dw      ?
 fps                 db      ?
 caret_vis           db      ?
 caret_pos           dw      ?
+draw_flag           db      ?
+mouse_data          dw      2 dup (?)
 
 frame_rate:         strdef  '00'
 file_label:         strdef  'BANK FILE:'
@@ -98,7 +101,7 @@ buttons:
 btn_new:            buttondef F_BTN_ENABLED, new_label,    8 by 23,  0 by 20,  38 by 10, 0
 btn_load:           buttondef F_BTN_ENABLED, load_label,   7 by 35,  0 by 32,  38 by 10, 0
 btn_save:           buttondef F_BTN_NONE,    save_label,   7 by 47,  0 by 44,  38 by 10, 0
-btn_exit:           buttondef F_BTN_ENABLED, exit_label,   7 by 59,  0 by 56,  38 by 10, 0
+btn_exit:           buttondef F_BTN_ENABLED, exit_label,   7 by 59,  0 by 56,  38 by 10, btn_exit_cb
 btn_add:            buttondef F_BTN_NONE,    add_label,   10 by 203, 0 by 200, 38 by 10, 0
 btn_remove:         buttondef F_BTN_NONE,    remove_label, 2 by 215, 0 by 212, 38 by 10, 0
 btn_clear:          buttondef F_BTN_NONE,    clear_label,  5 by 227, 0 by 224, 38 by 10, 0
@@ -120,21 +123,12 @@ state_actions:
     db  0
     dw  0
 
-inp_actions:
-    db  KEY_LEFT
-    dw  cur_left
-
-    db  KEY_RIGHT
-    dw  cur_right
-
-    db  KEY_UP
-    dw  cur_up
-
-    db  KEY_DOWN
-    dw  cur_down
-
-    db  0
-    dw  0
+input_actions:
+    defie   T_INPUT_KEY, K_LEFT,  cur_left,  0, 0
+    defie   T_INPUT_KEY, K_RIGHT, cur_right, 0, 0
+    defie   T_INPUT_KEY, K_UP,    cur_up,    0, 0
+    defie   T_INPUT_KEY, K_DOWN,  cur_down,  0, 0
+    defie   0,           0,       0,         0, 0
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ main tool engine                                  ³
@@ -177,6 +171,9 @@ cur_left:
 
 cur_up:
     ret
+
+btn_exit_cb:
+    jmp     exit
 
 fps_timer:
     reset_timer
@@ -221,7 +218,7 @@ allocate:
 init:
     call    allocate
     mode_13
-    mode_q
+    mode_p  modeq_params
     call    mouse_init
     call    init_keyboard_isr
     call    init_timer_isr
@@ -246,47 +243,36 @@ init:
 ;
 update:
     fire_timers
-    cs mov  bp, inp_actions
+    mread   mouse_data
+
+    cs mov  bp, input_actions
     mov     cx, 4
 p0: next_key
     cmp     al, 0
     je      >p4
-    cmp     al, KEY_ESC
+    cmp     al, K_ESC
     je      >p5
     dec     cx
     cmp     cx, 0
     jz      >p4
-p1: cs mov  bl, inp_scan_code
+p1: cs mov  bl, ia_code
     cmp     bl, 0
     jnz     >p2
-    cs mov  bp, inp_actions
+    cs mov  bp, input_actions
     jmp     p0
 p2: cmp     al, bl
     je      >p3
-    cs add  bp, type inp_action
+    cs add  bp, type input_action
     jmp     p1
-p3: cs call [inp_callback]
+p3: cs call [ia_callback]
     jmp     p0
 p4: ret
 p5: jmp     exit
 
 ;
 ; render the video scene
-;   bg 1
-;   fg
-;   bg 2
-;   text
-draw:
-    is_vblank
-    cmp     al, 0
-    jnz     >l0
-    ret
-
-l0: cs inc  fps
-
-    clear
-    call    draw_caret
-
+;
+draw_base:
     frect   0 by 0, 38 by 256, 8 by 0
     vline   38 by 0, 256, 0 by 0
 
@@ -303,6 +289,17 @@ l0: cs inc  fps
     frect   38 by 190, 218 by 9,8 by 0
     hline   38 by 198, 218,     0 by 0
     string  offset micro_font, banks_label, 4 by 191, 7 by 0, 1
+    ret
+
+draw:
+    cs cmp  draw_flag, 1
+    je      >l0
+    ret
+
+l0: cs mov  draw_flag, 0
+    clear
+    call    draw_base
+    call    draw_caret
 
     cs mov  bp, buttons
 l1: cs mov  ax, btn_flags
@@ -325,11 +322,21 @@ l3: cs mov  ax, btn_pos
 l4: add     bp, type button
     jmp     l1
 
-l5: string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
-    mouse
-    flip
-    wait_novblank
+l5:
+#if DEBUG
+    string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
+#endif
+    mdraw   mouse_data
+    ret
 
+show:
+    is_vblank
+    cmp     al, 0
+    jnz     >l0
+    ret
+l0: cs inc  fps
+    flip
+    cs mov  draw_flag, 1
     ret
 
 ;
@@ -344,6 +351,7 @@ start:
 tool_loop:
     cs call update
     cs call draw
+    cs call show
     jmp     tool_loop
 
 ;

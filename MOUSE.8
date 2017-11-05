@@ -9,6 +9,11 @@
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
+mouse_state struc [bp]
+    ms_pos  dw  ?
+    ms_btn  dw  ?
+ends
+
 cursor_happy:
     dw 0FFFFh, 0F81Fh, 0E007h, 0C003h
     dw 08001h, 08001h, 00000h, 00000h
@@ -56,7 +61,7 @@ cursor_pointer2:
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-mouse_draw:
+_mouse_draw:
     struc [bp]
                 dw ?
         m_bmp   dw ?
@@ -105,14 +110,12 @@ l4: inc     di
     jne     l0
     ret
 
-mouse macro
+mdraw macro
     push    es, bp, ds, ax, bx, si
-    call    mouse_pos
-    mov     ah, dl
-    mov     al, cl
-    push    ax
+    mov     bp, #1
+    push    ms_pos
     push    cursor_pointer2
-    call    mouse_draw
+    call    _mouse_draw
     add     sp, 4
     pop     si, bx, ax, ds, bp, es
 #em
@@ -153,6 +156,17 @@ mouse_pos:
     mov     ax, 3
     int     33h
     ret
+
+mread macro
+    push    bp, ax, bx, cx, dx
+    call    mouse_pos
+    mov     bp, #1
+    mov     ah, dl
+    mov     al, cl
+    mov     ms_pos, ax
+    mov     ms_btn, bx
+    pop     dx, cx, bx, ax, bp
+#em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ mouse_reset                                       ³

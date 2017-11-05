@@ -9,7 +9,52 @@
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
-inp_action struc [bp]
-    inp_scan_code   db ?
-    inp_callback    dw ?
+K_ESC           equ 01h
+K_ENTER         equ 01ch
+K_CTRL          equ 01dh
+K_A             equ 01eh
+K_S             equ 01fh
+K_D             equ 020h
+K_W             equ 011h
+K_LSHIFT        equ 02ah
+K_RSHIFT        equ 036h
+K_LALT          equ 038h
+K_SPACE         equ 039h
+K_UP            equ 048h
+K_LEFT          equ 04bh
+K_RIGHT         equ 04dh
+K_DOWN          equ 050h
+K_ESCAPE1       equ 0e0h
+K_ESCAPE2       equ 0e1h
+
+T_INPUT_KEY     equ 1
+T_INPUT_MOUSE   equ 2
+T_INPUT_JOY     equ 3
+
+input_event struc [bp]
+    ie_type     db ?
+    ie_code     db ?
+    ie_data1    dw ?
+    ie_data2    dw ?
 ends
+
+input_action struc [bp]
+    ia_type     db ?
+    ia_code     db ?
+    ia_callback dw ?
+    ia_data1    dw ?
+    ia_data2    dw ?
+ends
+
+defie macro
+    db #1, #2
+    dw #3, #4, #5
+#em
+
+even
+
+input_queue     db ((type input_event) * 256) dup ?
+input_head      dw ?
+input_tail      dw ?
+
+
