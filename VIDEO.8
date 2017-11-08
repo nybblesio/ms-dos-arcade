@@ -177,7 +177,7 @@ string macro
 clear_page:
     cs mov  es, back_buffer_ptr
     mov     di, 0
-    mov     cx, (VRAM_SIZE / 2) + 2
+    mov     cx, (SZ_VRAM / 2) + 2
     mov     ax, 07f7fh
     cld
     es rep  stosw
@@ -194,7 +194,7 @@ copy_page:
     mov     es, VRAM
     mov     si, 0
     mov     di, 0
-    mov     cx, (VRAM_SIZE / 2) + 2
+    mov     cx, (SZ_VRAM / 2) + 2
     cld
 l0: ds lodsw
     es stosw

@@ -1,0 +1,135 @@
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ one-on-one                                        ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ copyright (C) 2017 jeff panici                    ³
+;³ https://nybbles.io                                ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+TICK_BASE           equ 70
+
+PC_TIMER            equ 042h
+PC_TIMER_ACCESS     equ 043h
+PC_SPEAKER          equ 061h
+PC_SPEAKER_BITS     equ 3
+
+SB_RESET_W          equ 0206h
+SB_FM_STATUS_R      equ 0208h
+SB_FM_ADDR_W        equ 0208h
+SB_FM_DATA_W        equ 0209h
+SB_DATA_R           equ 020ah
+SB_DATA_W           equ 020ch
+SB_CMD_W            equ 020ch
+SB_WRITE_STAT_R     equ 020ch
+SB_DATA_AVAIL_R     equ 020eh
+
+AL_FM_STATUS_R      equ 0388h
+AL_FM_ADDR_W        equ 0388h
+AL_FM_DATA_W        equ 0389h
+AL_CHAR             equ 020h
+AL_SCALE            equ 040h
+AL_ATTACK           equ 060h
+AL_SUSTAIN          equ 080h
+AL_WAVE             equ 0e0h
+AL_FREQ_L           equ 0a0h
+AL_FREQ_H           equ 0b0h
+AL_FEED_CON         equ 0c0h
+AL_EFFECTS          equ 0bdh
+
+SQ_MAX_TRACKS       equ 10
+SQ_MAX_MOODS        equ 1
+
+SEV_NULL            equ 0
+SEV_NOTE_OFF        equ 1
+SEV_NOTE_ON         equ 2
+SEV_NOTE_PITCH      equ 3
+SEV_NEW_INST        equ 4
+SEV_NEW_PERC        equ 5
+SEV_PERC_ON         equ 6
+SEV_PERC_OFF        equ 7
+SEV_SEQ_END         equ -1
+
+F_HARDWARE_NONE     equ 0000_0000xb
+F_HARDWARE_SB       equ 0000_0001xb
+F_HARDWARE_ADLIB    equ 0000_0010xb
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ structures & variables                            ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+instrument struc [bp]
+    m_char      db ?
+    c_char      db ?
+    m_scale     db ?
+    c_scale     db ?
+    m_attack    db ?
+    c_attack    db ?
+    m_sustain   db ?
+    c_sustain   db ?
+    m_wave      db ?
+    c_wave      db ?
+    n_conn      db ?
+ends
+
+music_track struc [bp]
+    mt_mood     dw ?
+    mt_moods    dw SQ_MAX_MOODS dup (?)
+    mt_inst     db type instrument dup ?
+    mt_percus   db ?
+    mt_seq_ptr  dd ?
+    mt_next_evt dd ?
+ends
+
+even
+
+f_hardware_cap  db ?
+
+_sound_init:
+    ret
+
+sound_init macro
+    call    _sound_init
+#em
+
+_sound_shutdown:
+    ret
+
+sound_shutdown macro
+    call    _sound_shutdown
+#em
+
+_sound_play:
+    ret
+
+_sound_stop:
+    ret
+
+_sound_wait:
+    ret
+
+_sound_music_start:
+    ret
+
+_sound_music_on:
+    ret
+
+_sound_music_off:
+    ret
+
+_sound_music_fade:
+    ret
+
+_sound_music_playing:
+    ret
+
+_sound_playing:
+    ret
+
+

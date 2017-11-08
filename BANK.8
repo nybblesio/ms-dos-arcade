@@ -46,8 +46,8 @@ bank_md struc [bp]
     md_props        db  ((type bank_prop) * 60) dup ?
 ends
 
-BANK_HDRS_SZ        equ type bank_block * 10
-BANK_BLK_SZ         equ type bank_block * 15
+SZ_BANK_HDRS        equ type bank_block * 10
+SZ_BANK_BLK         equ type bank_block * 15
 
 even
 

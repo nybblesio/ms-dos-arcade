@@ -24,6 +24,7 @@ include timer.8
 include vga.8
 include video.8
 include mouse.8
+include sound.8
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ editor constants                                  ³
@@ -193,22 +194,22 @@ caret_timer:
 ; allocate memory
 ;
 allocate:
-    alloc   CTRL_RAM_SIZE / 16,  offset ctrl_ram_ptr
-    memset  ctrl_ram_ptr, 0, CTRL_RAM_SIZE, 0
+    alloc   SZ_CTRL_RAM / 16,  offset ctrl_ram_ptr
+    memset  ctrl_ram_ptr, 0, SZ_CTRL_RAM, 0
 
     mov     es, ctrl_ram_ptr
     mov     bp, 0
 
-    alloc   TILE_BANK_SIZE / 16, offset temp_ptr
-    memset  temp_ptr, 0, TILE_BANK_SIZE, 024h
+    alloc   SZ_TILE_BANK / 16, offset temp_ptr
+    memset  temp_ptr, 0, SZ_TILE_BANK, 024h
     es_movm c_bg_tiles, temp_ptr
 
-    alloc   TILE_BANK_SIZE / 16, offset temp_ptr
-    memset  temp_ptr,   0, TILE_BANK_SIZE, 07fh
+    alloc   SZ_TILE_BANK / 16, offset temp_ptr
+    memset  temp_ptr,   0, SZ_TILE_BANK, 07fh
     es_movm c_spr_tiles, temp_ptr
 
-    alloc   VRAM_SIZE / 16, offset back_buffer_ptr
-    memset  back_buffer_ptr, 0, VRAM_SIZE, 0
+    alloc   SZ_VRAM / 16, offset back_buffer_ptr
+    memset  back_buffer_ptr, 0, SZ_VRAM, 0
 
     ret
 
