@@ -159,21 +159,18 @@ init:
 update:
     fire_timers
 
-    cs mov  bp, input_actions
     mov     cx, 4
-p0: next_key
+p0: cs mov  bp, input_actions
+    next_key
     cmp     al, 0
     je      >p4
     cmp     al, K_ESC
     je      >p5
     dec     cx
-    cmp     cx, 0
     jz      >p4
 p1: cs mov  bl, ia_code
     cmp     bl, 0
-    jnz     >p2
-    cs mov  bp, input_actions
-    jmp     p0
+    jz      p0
 p2: cmp     al, bl
     je      >p3
     cs add  bp, type input_action

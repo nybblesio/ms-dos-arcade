@@ -17,6 +17,12 @@
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
+J_CTL_PORT      equ 0201h
+J_MASK_BTN_1    equ 010h
+J_MASK_BTN_2    equ 020h
+J_MASK_BTN_3    equ 040h
+J_MASK_BTN_4    equ 080h
+
 K_ESC           equ 01h
 K_ENTER         equ 01ch
 K_CTRL          equ 01dh
@@ -72,6 +78,14 @@ even
 input_queue     db ((type input_event) * 256) dup ?
 input_head      dw ?
 input_tail      dw ?
+input_j1_b1     db ?
+input_j1_b2     db ?
+input_j1_b3     db ?
+input_j1_b4     db ?
+input_j2_b1     db ?
+input_j2_b2     db ?
+input_j2_b3     db ?
+input_j2_b4     db ?
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ input processing functions                        ³
@@ -92,6 +106,25 @@ _read_inputs:
 read_inputs macro
 #em
 
+_joy_buttons:
+    cli
+    mov     dx, J_CTL_PORT
+    xor     ax, ax
+    in      al, dx
+    mov     bl, al
+    and     bl, J_MASK_BTN_1
+    mov     input_j1_b1, bl
+    mov     bl, al
+    and     bl, J_MASK_BTN_2
+    mov     input_j1_b2, bl
+    mov     bl, al
+    and     bl, J_MASK_BTN_3
+    mov     input_j1_b3, bl
+    mov     bl, al
+    and     bl, J_MASK_BTN_4
+    mov     input_j1_b4, bl
+    sti
+    ret
 ;
 ;
 ;
