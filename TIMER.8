@@ -136,6 +136,14 @@ fire_timers macro
     pop     di, cx, ax, bp, es
 #em
 
+timer macro
+    ldfreetimer
+    es mov  tm_callback, #1
+    es mov  tm_frames, #2
+    es mov  tm_count, #2
+    es mov  tm_flags, F_TIMER_ENABLED
+#em
+
 game_timer_isr:
     cli
     push    es, ax

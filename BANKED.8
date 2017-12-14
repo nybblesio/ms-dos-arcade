@@ -15,10 +15,10 @@ code segment
 include constant.8
 include macro.8
 include string.8
-include input.8
 include control.8
 include memory.8
 include io.8
+include input.8
 include bank.8
 include timer.8
 include vga.8
@@ -124,12 +124,12 @@ state_actions:
     db  0
     dw  0
 
-input_actions:
-    defie   T_INPUT_KEY, K_LEFT,  cur_left,  0, 0
-    defie   T_INPUT_KEY, K_RIGHT, cur_right, 0, 0
-    defie   T_INPUT_KEY, K_UP,    cur_up,    0, 0
-    defie   T_INPUT_KEY, K_DOWN,  cur_down,  0, 0
-    defie   0,           0,       0,         0, 0
+;input_actions:
+;    defie   T_INPUT_KEY, K_LEFT,  cur_left,  0, 0
+;    defie   T_INPUT_KEY, K_RIGHT, cur_right, 0, 0
+;    defie   T_INPUT_KEY, K_UP,    cur_up,    0, 0
+;    defie   T_INPUT_KEY, K_DOWN,  cur_down,  0, 0
+;    defie   0,           0,       0,         0, 0
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ main tool engine                                  ³
@@ -246,27 +246,27 @@ update:
     fire_timers
     mread   mouse_data
 
-    cs mov  bp, input_actions
-    mov     cx, 4
+;    cs mov  bp, input_actions
+;    mov     cx, 4
 p0: next_key
     cmp     al, 0
     je      >p4
     cmp     al, K_ESC
     je      >p5
-    dec     cx
-    cmp     cx, 0
-    jz      >p4
-p1: cs mov  bl, ia_code
-    cmp     bl, 0
-    jnz     >p2
-    cs mov  bp, input_actions
-    jmp     p0
-p2: cmp     al, bl
-    je      >p3
-    cs add  bp, type input_action
-    jmp     p1
-p3: cs call [ia_callback]
-    jmp     p0
+;    dec     cx
+;    cmp     cx, 0
+;    jz      >p4
+;p1: cs mov  bl, ia_code
+;    cmp     bl, 0
+;    jnz     >p2
+;    cs mov  bp, input_actions
+;    jmp     p0
+;p2: cmp     al, bl
+;    je      >p3
+;    cs add  bp, type input_action
+;    jmp     p1
+;p3: cs call [ia_callback]
+;    jmp     p0
 p4: ret
 p5: jmp     exit
 

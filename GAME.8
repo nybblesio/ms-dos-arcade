@@ -15,10 +15,10 @@ code segment
 include constant.8
 include macro.8
 include string.8
-include input.8
 include control.8
 include memory.8
 include io.8
+include input.8
 include bank.8
 include timer.8
 include vga.8
@@ -44,12 +44,31 @@ frame_rate:         strdef  '00'
 game_title:         strdef  'ONE-ON-ONE'
 game_copyright:     strdef  '(C) 2017 JEFF PANICI'
 
-input_actions:
-    defie   T_INPUT_KEY, K_LEFT,  p1_left,  0, 0
-    defie   T_INPUT_KEY, K_RIGHT, p1_right, 0, 0
-    defie   T_INPUT_KEY, K_UP,    p1_up,    0, 0
-    defie   T_INPUT_KEY, K_DOWN,  p1_down,  0, 0
-    defie   0,           0,       0,        0, 0
+input_events:
+quit_key_evt:       def_inp_evt     T_INPUT_KEY, K_ESC
+
+p1_left_key_evt:    def_inp_evt     T_INPUT_KEY, K_LEFT
+p1_left_joy_evt:    def_inp_evt     T_INPUT_JOY, 1
+
+p1_right_key_evt:   def_inp_evt     T_INPUT_KEY, K_RIGHT
+p1_right_joy_evt:   def_inp_evt     T_INPUT_JOY, 1
+
+p1_up_key_evt:      def_inp_evt     T_INPUT_KEY, K_UP
+p1_up_joy_evt:      def_inp_evt     T_INPUT_JOY, 1
+
+p1_down_key_evt:    def_inp_evt     T_INPUT_KEY, K_DOWN
+p1_down_joy_evt:    def_inp_evt     T_INPUT_JOY, 1
+
+                    def_inp_evt     0,           0
+
+input_bindings:
+quit_bind:          def_inp_bind    B_QUIT,     'QUIT            ', exit,      quit_key_evt,     0,                0, 0
+p1_left_bind:       def_inp_bind    B_P1_LEFT,  'P1 LEFT         ', _p1_left,  p1_left_key_evt,  p1_left_joy_evt,  0, 0
+p1_right_bind:      def_inp_bind    B_P1_RIGHT, 'P1 RIGHT        ', _p1_right, p1_right_key_evt, p1_right_joy_evt, 0, 0
+p1_up_bind:         def_inp_bind    B_P1_UP,    'P1 UP           ', _p1_up,    p1_up_key_evt,    p1_up_joy_evt,    0, 0
+p1_down_bind:       def_inp_bind    B_P1_DOWN,  'P1 DOWN         ', _p1_down,  p1_down_key_evt,  p1_down_joy_evt,  0, 0
+
+                    def_inp_bind    0,          '                ', 0,         0,                0,                0, 0
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ main game engine                                  ³
@@ -63,7 +82,7 @@ input_actions:
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-p1_right:
+_p1_right:
     loadspr 0
     es add  s_x, 4
     es cmp  s_x, 230
@@ -71,7 +90,7 @@ p1_right:
     es mov  s_x, 230
 l0: ret
 
-p1_down:
+_p1_down:
     loadspr 0
     es add  s_y, 4
     es cmp  s_y, 230
@@ -79,7 +98,7 @@ p1_down:
     es mov  s_y, 230
 l0: ret
 
-p1_left:
+_p1_left:
     loadspr 0
     es sub  s_x, 4
     es cmp  s_x, 10
@@ -87,7 +106,7 @@ p1_left:
     es mov  s_x, 10
 l0: ret
 
-p1_up:
+_p1_up:
     loadspr 0
     es sub  s_y, 4
     es cmp  s_y, 10
@@ -145,11 +164,7 @@ init:
     loadspr 0
     setspr  0, 0, 100, 10, F_SPR_ENABLED, 0
 
-    ldfreetimer
-    es mov  tm_callback, fps_timer
-    es mov  tm_frames, 60
-    es mov  tm_count, 60
-    es mov  tm_flags, F_TIMER_ENABLED
+    timer   offset fps_timer, 60
 
     ret
 
@@ -158,27 +173,9 @@ init:
 ;
 update:
     fire_timers
-
-    mov     cx, 4
-p0: cs mov  bp, input_actions
-    next_key
-    cmp     al, 0
-    je      >p4
-    cmp     al, K_ESC
-    je      >p5
-    dec     cx
-    jz      >p4
-p1: cs mov  bl, ia_code
-    cmp     bl, 0
-    jz      p0
-p2: cmp     al, bl
-    je      >p3
-    cs add  bp, type input_action
-    jmp     p1
-p3: cs call [ia_callback]
-    jmp     p0
-p4: ret
-p5: jmp     exit
+    update_input    input_events
+    fire_bindings   input_bindings
+    ret
 
 ;
 ; render the video scene
