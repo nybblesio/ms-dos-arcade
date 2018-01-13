@@ -1,5 +1,5 @@
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ one-on-one                                        ³
+;³ lumberjacks                                       ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
 ;³ copyright (C) 2017 jeff panici                    ³
@@ -41,8 +41,8 @@ temp_ptr            dw      ?
 draw_flag           db      ?
 
 frame_rate:         strdef  '00'
-game_title:         strdef  'ONE-ON-ONE'
-game_copyright:     strdef  '(C) 2017 JEFF PANICI'
+game_title:         strdef  'LUMBERJACKS'
+game_copyright:     strdef  '(C) 2017 NYBBLES.IO'
 
 input_events:
 quit_key_evt:       def_inp_evt     T_INPUT_KEY, K_ESC
@@ -169,15 +169,6 @@ init:
     ret
 
 ;
-; update the game state
-;
-update:
-    fire_timers
-    update_input    input_events
-    fire_bindings   input_bindings
-    ret
-
-;
 ; render the video scene
 ;   bg 1
 ;   fg
@@ -188,11 +179,11 @@ draw_title:
     frect   50 by 33, 150 by 85, 8 by 0
     rect    50 by 33, 150 by 85, 0 by 0
 
-    string  offset large_font, game_title, 88 by 45, 1 by 0, 0
-    string  offset large_font, game_title, 89 by 46, 7 by 0, 0
+    string  offset large_font, game_title, 80 by 45, 1 by 0, 0
+    string  offset large_font, game_title, 81 by 46, 7 by 0, 0
 
-    string  offset micro_font, game_title, 96 by 74, 1 by 0, 1
-    string  offset micro_font, game_title, 97 by 75, 7 by 0, 1
+    string  offset micro_font, game_title, 90 by 74, 1 by 0, 1
+    string  offset micro_font, game_title, 91 by 75, 7 by 0, 1
 
     string  offset micro_font, game_copyright, 62 by 90, 1 by 0, 1
     string  offset micro_font, game_copyright, 63 by 91, 7 by 0, 1
@@ -220,6 +211,8 @@ show:
     ret
 l0: flip
     wait_novblank
+    update_input    input_events
+    fire_bindings   input_bindings
     cs inc  fps
     cs mov  draw_flag, 1
     ret
@@ -234,7 +227,7 @@ start:
 ; the heart
 ;
 game_loop:
-    cs call update
+    fire_timers
     cs call draw
     cs call show
     jmp     game_loop

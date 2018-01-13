@@ -1,5 +1,5 @@
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ one-on-one                                        ³
+;³ lumberjacks                                       ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
 ;³ copyright (C) 2017 jeff panici                    ³
@@ -149,29 +149,29 @@ _fire_bindings:
     mov     bp, sp
     mov     bp, bp[2]
 f0: cs cmp  ib_code, 0
-    je      >f3
+    je      >f4
     mov     si, bp
     add     si, offset ib_event1
     mov     cx, 4
 f1: cs cmp  w[si], 0
     jz      >f3
     cs mov  di, [si]
-    add     di, 2
-    cs cmp  w[di], 1
-    je      >f2
-    add     si, 2
-    loop    f1
-    add     bp, type input_binding
-    jmp     f0
-f2: break
+    cs cmp  w[di+2], 1
+    jne     >f2
+    push    bp, si, cx
     cs call [ib_callback]
-f3: ret
+    pop     cx, si, bp
+f2: add     si, 2
+    loop    f1
+f3: add     bp, type input_binding
+    jmp     f0
+f4: ret
 
 fire_bindings macro
     push    ax, bx, cx, bp, si, di
     push    #1
     cs call _fire_bindings
     add     sp, 2
-    pop    di, si, bp, cx, bx, ax
+    pop     di, si, bp, cx, bx, ax
 #em
 

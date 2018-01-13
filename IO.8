@@ -1,5 +1,5 @@
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ one-on-one                                        ³
+;³ lumberjacks                                       ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³                                                   ³
 ;³ copyright (C) 2017 jeff panici                    ³
@@ -50,10 +50,10 @@ _next_key:
     cs mov  bh, key_queue_tail
     cs mov  bl, key_queue_head
     cmp     bh, bl
-    jne     >l0
+    jne     >k0
     mov     al, 0
     ret
-l0: cs mov  si, offset key_queue
+k0: cs mov  si, offset key_queue
     xor     bh, bh
     add     si, bx
     cs mov  al, b[si]
