@@ -230,13 +230,10 @@ init:
     es mov  tm_count, 60
     es mov  tm_flags, F_TIMER_ENABLED
 
-    ldfreetimer
-    es mov  tm_callback, caret_timer
-    es mov  tm_frames, 25
-    es mov  tm_count, 25
-    es mov  tm_flags, F_TIMER_ENABLED
 
+    timer   offset caret_timer, 25
     cs mov  caret_pos, 42 by 10
+
     ret
 
 ;
@@ -327,7 +324,7 @@ l5:
 #if DEBUG
     string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
 #endif
-    mdraw   mouse_data
+    mdraw   mouse_data, cursor_happy
     ret
 
 show:
