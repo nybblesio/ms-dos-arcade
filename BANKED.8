@@ -239,9 +239,47 @@ init:
 ;
 ; update the tool state
 ;
+fire_buttons:
+    cs mov  bp, mouse_data
+    cs mov  ax, ms_btn
+    test    al, 0000_0001xb
+    jnz     >l0
+    ret
+l0: cs mov  bp, buttons
+l1: cs mov  ax, btn_flags
+    test    ax, F_BTN_END
+    jz      >l2
+    jmp     long >l5
+l2: test    ax, F_BTN_ENABLED
+    jz      >l4
+l3: cs mov  ax, btn_pos
+    cs mov  cx, btn_size
+    push    bp
+    cs mov  bp, mouse_data
+    cs mov  bx, ms_pos
+    cs mov  dx, ax
+    add     dx, cx
+    cmp     bx, ax
+    jge     >l6
+    jmp     >l9
+l6: cmp     bx, dx
+    jle     >l7
+    jmp     >l9
+l7: pop     bp
+    cmp     btn_func, 0
+    jnz     >l8
+    jmp     >l9
+l8: cs call [btn_func]
+    jmp     >l4
+l9: pop     bp
+l4: add     bp, type button
+    jmp     l1
+l5: ret
+
 update:
     fire_timers
     mread   mouse_data
+    call    fire_buttons
 
 ;    cs mov  bp, input_actions
 ;    mov     cx, 4
@@ -289,24 +327,15 @@ draw_base:
     string  offset micro_font, banks_label, 4 by 191, 7 by 0, 1
     ret
 
-draw:
-    cs cmp  draw_flag, 1
-    je      >l0
-    ret
-
-l0: cs mov  draw_flag, 0
-    clear
-    call    draw_base
-    call    draw_caret
-
+draw_buttons:
     cs mov  bp, buttons
-l1: cs mov  ax, btn_flags
+l0: cs mov  ax, btn_flags
     test    ax, F_BTN_END
-    jz      >l2
-    jmp     long >l5
-l2: test    ax, F_BTN_ENABLED
-    jz      >l4
-l3: cs mov  ax, btn_pos
+    jz      >l1
+    jmp     long >l4
+l1: test    ax, F_BTN_ENABLED
+    jz      >l3
+l2: cs mov  ax, btn_pos
     cs mov  cx, btn_size
     xor     bx, bx
     mov     bl, ch
@@ -317,14 +346,26 @@ l3: cs mov  ax, btn_pos
     string  offset micro_font, si, dx, 7 by 0, 1
     add     al, cl
     hline   ax, bx, 0 by 0
-l4: add     bp, type button
-    jmp     l1
+l3: add     bp, type button
+    jmp     l0
+l4: ret
+
+draw:
+    cs cmp  draw_flag, 1
+    je      >l0
+    ret
+
+l0: cs mov  draw_flag, 0
+    clear
+    call    draw_base
+    call    draw_caret
+    call    draw_buttons
 
 l5:
 #if DEBUG
     string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
 #endif
-    mdraw   mouse_data, cursor_happy
+    mdraw   mouse_data, cursor_pointer2
     ret
 
 show:
