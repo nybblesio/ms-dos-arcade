@@ -45,6 +45,10 @@ F_BTN_NONE      equ 0000_0000_0000_0000xb
 F_BTN_ENABLED   equ 0000_0000_0000_0001xb
 F_BTN_END       equ 1000_0000_0000_0000xb
 
+F_TXT_NONE      equ 0000_0000xb
+F_TXT_ENABLED   equ 0000_0001xb
+F_TXT_END       equ 1000_0000xb
+
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ editor structures & variables                     ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
@@ -57,6 +61,34 @@ state_action struc [bp]
     state_code      db ?
     state_callback  dw ?
 ends
+
+valid_key struc [bp]
+    vk_code     db ?
+    vk_mod_code db ?
+    vk_ascii    db ?
+ends
+
+valid_key_def macro
+    db #1, #2, #3
+#em
+
+text_field struc [bp]
+    txt_flags       db ?
+    txt_size        db ?
+    txt_pos         dw ?
+    txt_keys        dw ?
+    txt_buffer      dw ?
+    txt_char_idx    db ?
+    txt_pad         db ?
+ends
+
+text_field_def macro
+    db #2, #3
+    dw #4, #5, #1_buffer, 0
+
+#1_buffer:
+    db #3 dup(0)
+#em
 
 button struc [bp]
     btn_flags   dw ?
@@ -117,6 +149,83 @@ input_bindings:
 quit_bind:          def_inp_bind    B_QUIT,     'QUIT            ', exit,      quit_key_evt,     0,                0, 0
 
                     def_inp_bind    0,          '                ', 0,         0,                0,                0, 0
+
+valid_fname_keys:
+                    valid_key_def   016h,   0,  '1'
+                    valid_key_def   01eh,   0,  '2'
+                    valid_key_def   026h,   0,  '3'
+                    valid_key_def   025h,   0,  '4'
+                    valid_key_def   02eh,   0,  '5'
+                    valid_key_def   036h,   0,  '6'
+                    valid_key_def   03dh,   0,  '7'
+                    valid_key_def   03eh,   0,  '8'
+                    valid_key_def   046h,   0,  '9'
+                    valid_key_def   045h,   0,  '0'
+                    valid_key_def   01ch,   0,  'A'
+                    valid_key_def   032h,   0,  'B'
+                    valid_key_def   021h,   0,  'C'
+                    valid_key_def   023h,   0,  'D'
+                    valid_key_def   024h,   0,  'E'
+                    valid_key_def   02bh,   0,  'F'
+                    valid_key_def   034h,   0,  'G'
+                    valid_key_def   033h,   0,  'H'
+                    valid_key_def   043h,   0,  'I'
+                    valid_key_def   03bh,   0,  'J'
+                    valid_key_def   042h,   0,  'K'
+                    valid_key_def   04bh,   0,  'L'
+                    valid_key_def   03ah,   0,  'M'
+                    valid_key_def   031h,   0,  'N'
+                    valid_key_def   044h,   0,  'O'
+                    valid_key_def   04dh,   0,  'P'
+                    valid_key_def   015h,   0,  'Q'
+                    valid_key_def   02dh,   0,  'R'
+                    valid_key_def   01bh,   0,  'S'
+                    valid_key_def   02ch,   0,  'T'
+                    valid_key_def   03ch,   0,  'U'
+                    valid_key_def   02ah,   0,  'V'
+                    valid_key_def   01dh,   0,  'W'
+                    valid_key_def   022h,   0,  'X'
+                    valid_key_def   035h,   0,  'Y'
+                    valid_key_def   01ah,   0,  'Z'
+                    valid_key_def   049h,   0,  '.'
+                    valid_key_def   04eh,   0,  '-'
+                    valid_key_def   04eh, 012h, '_'
+                    valid_key_def   0,      0,   0
+
+valid_hex_keys:
+                    valid_key_def   016h,   0,  '1'
+                    valid_key_def   01eh,   0,  '2'
+                    valid_key_def   026h,   0,  '3'
+                    valid_key_def   025h,   0,  '4'
+                    valid_key_def   02eh,   0,  '5'
+                    valid_key_def   036h,   0,  '6'
+                    valid_key_def   03dh,   0,  '7'
+                    valid_key_def   03eh,   0,  '8'
+                    valid_key_def   046h,   0,  '9'
+                    valid_key_def   045h,   0,  '0'
+                    valid_key_def   01ch,   0,  'A'
+                    valid_key_def   032h,   0,  'B'
+                    valid_key_def   021h,   0,  'C'
+                    valid_key_def   023h,   0,  'D'
+                    valid_key_def   024h,   0,  'E'
+                    valid_key_def   02bh,   0,  'F'
+                    valid_key_def   0,      0,  0
+
+valid_dec_keys:
+                    valid_key_def   016h,   0,  '1'
+                    valid_key_def   01eh,   0,  '2'
+                    valid_key_def   026h,   0,  '3'
+                    valid_key_def   025h,   0,  '4'
+                    valid_key_def   02eh,   0,  '5'
+                    valid_key_def   036h,   0,  '6'
+                    valid_key_def   03dh,   0,  '7'
+                    valid_key_def   03eh,   0,  '8'
+                    valid_key_def   046h,   0,  '9'
+                    valid_key_def   045h,   0,  '0'
+                    valid_key_def   0,      0,  0
+
+text_fields:
+bank_file_field:    text_field_def  bank_file, F_TXT_NONE, 11, 42 by 10, valid_fname_keys
 
 state_actions:
     db  STATE_NO_FILE
