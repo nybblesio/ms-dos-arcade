@@ -108,6 +108,16 @@ btn_remove:         buttondef F_BTN_NONE,    remove_label, 2 by 215, 0 by 212, 3
 btn_clear:          buttondef F_BTN_NONE,    clear_label,  5 by 227, 0 by 224, 38 by 10, 0
                     buttondef F_BTN_END,     0,            0,        0,        0
 
+input_events:
+quit_key_evt:       def_inp_evt     T_INPUT_KEY, K_ESC
+
+                    def_inp_evt     0,           0
+
+input_bindings:
+quit_bind:          def_inp_bind    B_QUIT,     'QUIT            ', exit,      quit_key_evt,     0,                0, 0
+
+                    def_inp_bind    0,          '                ', 0,         0,                0,                0, 0
+
 state_actions:
     db  STATE_NO_FILE
     dw  no_file
@@ -123,13 +133,6 @@ state_actions:
 
     db  0
     dw  0
-
-;input_actions:
-;    defie   T_INPUT_KEY, K_LEFT,  cur_left,  0, 0
-;    defie   T_INPUT_KEY, K_RIGHT, cur_right, 0, 0
-;    defie   T_INPUT_KEY, K_UP,    cur_up,    0, 0
-;    defie   T_INPUT_KEY, K_DOWN,  cur_down,  0, 0
-;    defie   0,           0,       0,         0, 0
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ main tool engine                                  ³
@@ -224,13 +227,7 @@ init:
     call    init_keyboard_isr
     call    init_timer_isr
 
-    ldfreetimer
-    es mov  tm_callback, fps_timer
-    es mov  tm_frames, 60
-    es mov  tm_count, 60
-    es mov  tm_flags, F_TIMER_ENABLED
-
-
+    timer   offset fps_timer, 60
     timer   offset caret_timer, 25
     cs mov  caret_pos, 42 by 10
 
@@ -241,69 +238,48 @@ init:
 ;
 fire_buttons:
     cs mov  bp, mouse_data
+    cs mov  bx, ms_pos
     cs mov  ax, ms_btn
-    test    al, 0000_0001xb
+    test    al, F_LEFT_MOUSE_BTN
     jnz     >l0
     ret
 l0: cs mov  bp, buttons
 l1: cs mov  ax, btn_flags
     test    ax, F_BTN_END
     jz      >l2
-    jmp     long >l5
+    ret
 l2: test    ax, F_BTN_ENABLED
     jz      >l4
 l3: cs mov  ax, btn_pos
     cs mov  cx, btn_size
-    push    bp
-    cs mov  bp, mouse_data
-    cs mov  bx, ms_pos
     cs mov  dx, ax
     add     dx, cx
-    cmp     bx, ax
-    jge     >l6
-    jmp     >l9
-l6: cmp     bx, dx
-    jle     >l7
-    jmp     >l9
-l7: pop     bp
+    cmp     bh, al
+    jb      >l4
+    cmp     bh, dl
+    ja      >l4
+    cmp     bl, ah
+    jb      >l4
+    cmp     bl, dh
+    ja      >l4
     cmp     btn_func, 0
-    jnz     >l8
-    jmp     >l9
-l8: cs call [btn_func]
-    jmp     >l4
-l9: pop     bp
+    jz      >l4
+    cs call [btn_func]
 l4: add     bp, type button
     jmp     l1
-l5: ret
+    ret
 
 update:
     fire_timers
     mread   mouse_data
     call    fire_buttons
-
-;    cs mov  bp, input_actions
-;    mov     cx, 4
 p0: next_key
     cmp     al, 0
-    je      >p4
+    je      >p1
     cmp     al, K_ESC
-    je      >p5
-;    dec     cx
-;    cmp     cx, 0
-;    jz      >p4
-;p1: cs mov  bl, ia_code
-;    cmp     bl, 0
-;    jnz     >p2
-;    cs mov  bp, input_actions
-;    jmp     p0
-;p2: cmp     al, bl
-;    je      >p3
-;    cs add  bp, type input_action
-;    jmp     p1
-;p3: cs call [ia_callback]
-;    jmp     p0
-p4: ret
-p5: jmp     exit
+    je      >p2
+p1: ret
+p2: jmp     exit
 
 ;
 ; render the video scene
@@ -327,12 +303,13 @@ draw_base:
     string  offset micro_font, banks_label, 4 by 191, 7 by 0, 1
     ret
 
+
 draw_buttons:
     cs mov  bp, buttons
 l0: cs mov  ax, btn_flags
     test    ax, F_BTN_END
     jz      >l1
-    jmp     long >l4
+    ret
 l1: test    ax, F_BTN_ENABLED
     jz      >l3
 l2: cs mov  ax, btn_pos
@@ -348,7 +325,7 @@ l2: cs mov  ax, btn_pos
     hline   ax, bx, 0 by 0
 l3: add     bp, type button
     jmp     l0
-l4: ret
+    ret
 
 draw:
     cs cmp  draw_flag, 1
@@ -373,8 +350,11 @@ show:
     cmp     al, 0
     jnz     >l0
     ret
-l0: cs inc  fps
-    flip
+l0: flip
+    wait_novblank
+    update_input    input_events
+    fire_bindings   input_bindings
+    cs inc  fps
     cs mov  draw_flag, 1
     ret
 
