@@ -15,6 +15,7 @@ code segment
 include constant.8
 include macro.8
 include string.8
+include file.8
 include control.8
 include memory.8
 include io.8
@@ -122,6 +123,7 @@ fps_timer:
     call    put_dec2
     cs mov  fps, 0
     ret
+
 ;
 ; allocate memory
 ;

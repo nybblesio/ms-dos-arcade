@@ -15,6 +15,7 @@ code segment
 include constant.8
 include macro.8
 include string.8
+include file.8
 include control.8
 include memory.8
 include io.8
@@ -521,6 +522,7 @@ allocate:
 
 init:
     call    allocate
+    call    bank_init
     mode_13
     mode_p  modeq_params
     call    mouse_init

@@ -1,25 +1,30 @@
-;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ lumberjacks                                       ³
-;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
-;³                                                   ³
-;³ copyright (C) 2017 jeff panici                    ³
-;³ https://nybbles.io                                ³
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
-;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+;???????????????????????????????????????????????????Ä¿
+;? lumberjacks                                       ?
+;???????????????????????????????????????????????????Ä´
+;?                                                   ?
+;? copyright (C) 2017 jeff panici                    ?
+;? https://nybbles.io                                ?
+;?                                                   ?
+;?                                                   ?
+;?                                                   ?
+;?????????????????????????????????????????????????????
 
-;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ bank structures & variables                       ³
-;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
-;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+;???????????????????????????????????????????????????Ä¿
+;? bank structures & variables                       ?
+;???????????????????????????????????????????????????Ä´
+;?                                                   ?
+;?                                                   ?
+;?                                                   ?
+;?????????????????????????????????????????????????????
 
 F_BANK_BLOCK_NONE   equ 0000_0000_0000_0000xb
 F_BANK_BLOCK_DEL    equ 0000_0000_0000_0001xb
 F_BANK_BLOCK_DIRTY  equ 0000_0000_0000_0010xb
+
+BANK_TYPE_SPR       equ 1
+BANK_TYPE_TILE      equ 2
+BANK_TYPE_BG        equ 3
+BANK_TYPE_FONT      equ 4
 
 bank_header struc [bp]
     hdr_magick      dw  ?
@@ -27,33 +32,149 @@ bank_header struc [bp]
 ends
 
 bank_block struc [bp]
-    block_type      dw  ?
-    block_id        dw  ?
-    block_flags     dw  ?
-    block_data      db  4096 dup(?)
+    block_type      db  ?
+    block_id        db  ?
+    block_flags     db  ?
+    block_reserve   db  2 dup(?)
+    block_data      db  4090 dup(?)
 ends
 
 bank_prop struc [bp]
-    prop_name       db  10 dup(?)
-    prop_data       db  54 dup(?)
+    prop_name       db  32 dup(?)
+    prop_data       db  96 dup(?)
 ends
 
 bank_md struc [bp]
-    md_id           dw  ?
-    md_type         dw  ?
-    md_flags        dw  ?
-    md_blocks       dw  32 dup(?)
-    md_props        db  ((type bank_prop) * 60) dup ?
+    md_id           db  ?
+    md_type         db  ?
+    md_flags        db  ?
+    md_blk_seg      dw  ?
+    md_blk_off      dw  ?
+    md_reserve      db  ?
+    md_blocks       dw  16 dup(?)
+    md_props        db  ((type bank_prop) * 31) dup ?
 ends
 
-SZ_BANK_HDRS        equ type bank_block * 10
-SZ_BANK_BLK         equ type bank_block * 15
+SZ_BANK_HDRS        equ type bank_block * 16
+SZ_BANK_HDRS_PARA   equ SZ_BANK_HDRS / 16
+SZ_BANK_BLK         equ type bank_block * 16
+SZ_BANK_BLK_PARA    equ SZ_BANK_BLK / 16
 
 even
 
-bank_hdrs_ptr       dd  ?
-bank_hdrs_cur       db  ?
-bank_blk_ptr        dd  ?
-bank_blk_cur        db  ?
+bank_hdr_id         db  1
+bank_hdrs_seg       dw  ?
+bank_hdrs_off       dw  ?
 
+bank_file_header:
+    db  'BANK'
+    dw  type bank_block
 
+;???????????????????????????????????????????????????Ä¿
+;? bank functions and macros                         ?
+;???????????????????????????????????????????????????Ä´
+;?                                                   ?
+;?                                                   ?
+;?                                                   ?
+;?????????????????????????????????????????????????????
+bank_init:
+    alloc   SZ_BANK_HDRS_PARA, offset bank_hdrs_seg
+    memset  bank_hdrs_seg, 0, SZ_BANK_HDRS, 0
+    mov     bank_hdrs_off, 0
+    ret
+
+_bank_find:
+    mov     bp, sp
+    cs mov  es, bank_hdrs_seg
+    mov     ax, [bp]
+    mov     cx, 16
+    mov     bp, 0
+l0: cmp     bp, bank_hdrs_off
+    je      >l1
+    es cmp  al, md_id
+    je      >l1
+    add     bp, type bank_block
+    loop    l0
+l1: mov     ax, bp
+    ret
+
+bank_find macro
+    push    bp, es, cx, #1
+    call    _bank_find
+    add     sp, 4
+    pop     cx, es, bp
+#em
+
+_bank_new:
+    mov     bp, sp
+    mov     bx, [bp]
+    cs mov  es, bank_hdrs_seg
+    mov     bp, bank_hdrs_off
+    alloc   SZ_BANK_BLK_PARA, ax
+    mov     md_blk_seg, ax
+    mov     md_blk_off, 0
+    mov     cl, bank_hdr_id
+    mov     md_id, cl
+    inc     cl
+    mov     bank_hdr_id, cl
+    mov     md_type, bl
+    mov     md_flags, F_BANK_BLOCK_DIRTY
+    mov     ax, bp
+    add     bp, type bank_block
+    cs mov  bank_hdrs_off, bp
+    ret
+
+bank_new macro
+    push    bp, cx, bx, #1  ; bank type byte
+    call    _bank_new
+    add     sp, 2
+    pop     bx, cx, bp
+#em
+
+_bank_file_create:
+    mov     bp, sp
+    mov     ax, [bp]
+    file_create ax
+    jc      >l1
+l0: file_write  ax, offset bank_file_header, 4
+    jc      >l1
+    ret
+l1: ; handle error
+    ; pointer to error string in file?
+    ret
+
+bank_file_create macro
+    push    bp, #1
+    call    _bank_file_create
+    add     sp, 2
+    pop     bp
+#em
+
+; use in banked
+_bank_file_save:
+    ; 1. create temp file via _bank_file_create
+    ; 2. walk each header block, skipping deleted
+    ;   2a. write header block
+    ;   2b. write each data block, skipping deleted
+    ; 3. delete last file
+    ; 4. rename temp to proper filename
+    ret
+
+; use in banked
+_bank_file_load:
+    ; 1. open file via file_open
+    ; 2. read each block
+    ;   2a. if header, fill in at bank_hdrs_off
+    ;   2b. if data block, add to current bank header's seg/off
+    ; 3. close file
+    ret
+
+; use from game engine
+; params:
+;
+;   - filename
+;   - bank id
+;   - dest buffer
+;
+_bank_file_load_data:
+    ret
