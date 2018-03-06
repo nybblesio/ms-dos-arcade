@@ -83,21 +83,18 @@ valid_key_def macro
 
 text_field struc [bp]
     txt_flags       db ?
-    txt_size        db ?
+    txt_buffer      dw ?
     txt_pos         dw ?
     txt_keys        dw ?
     txt_callback    dw ?
-    txt_buffer      dw ?
     txt_char_idx    db ?
     txt_pad         db ?
 ends
 
 text_field_def macro
-    db #2, #3
-    dw #4, #5, #1_buffer, 0
-
-#1_buffer:
-    db #3 dup(0)
+    db #1
+    dw #2, #3, #4, #5
+    db 0,  0
 #em
 
 button struc [bp]
@@ -235,8 +232,8 @@ valid_dec_keys:
                     valid_key_def   0,      0,  0
 
 text_fields:
-bank_file_field:    text_field_def  bank_file, F_TXT_NONE, 11, 42 by 10, valid_fname_keys, file_name_cb
-                    text_field_def  empty,     F_TXT_NONE, 0,  0,        0,               0
+bank_file_field:    text_field_def  F_TXT_READONLY, bank_filename, 42 by 10, valid_fname_keys, file_name_cb
+                    text_field_def  F_TXT_END,                  0,        0,                0,            0
 
 no_file_state:      state_def       STATE_NO_FILE,   no_file_cb
 new_file_state:     state_def       STATE_NEW_FILE,  new_file_cb
@@ -247,6 +244,8 @@ tile_bank_state:    state_def       STATE_TILE_BANK, tile_bank_cb
 spr_bank_state:     state_def       STATE_SPR_BANK,  spr_bank_cb
 
 current_state       dw no_file_state
+
+bank_filename:      filename        'lumber.bnk'
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ state machine callbacks                           ³
@@ -301,12 +300,6 @@ exit_cb:
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-_text_field:
-    ret
-
-text_field macro
-#em
-
 update_text_fields:
     ret
 
@@ -319,6 +312,9 @@ update_text_fields:
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_new_cb:
     cs mov  current_state, new_file_state
+    cs mov  bp, bank_file_field
+    cs mov  txt_flags, F_TXT_EDIT
+    cs mov  caret_enabled, 1
     ret
 
 btn_load_cb:
@@ -401,12 +397,23 @@ caret_timer:
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 draw_text_fields:
-    ; load bp with text_fields ptr
-    ; walk each field
-    ;
-    ; if F_TXT_READONLY, just draw string grey
-    ; if F_TXT_EDIT, draw string white
-    ;
+    push    bp, ax, bx, cx
+    mov     bp, text_fields
+l0: xor     ax, ax
+    mov     cx, 8 by 0
+    mov     al, txt_flags
+    test    al, F_TXT_END
+    jnz     >l2
+    mov     al, txt_flags
+    test    al, F_TXT_EDIT
+    jz      >l1
+    mov     cx, 7 by 0
+l1: mov     ax, txt_pos
+    mov     bx, txt_buffer
+    string  offset micro_font, bx, ax, cx, 1
+    add     bp, type text_field
+    jmp     l0
+l2: pop     cx, bx, ax, bp
     ret
 
 draw_caret:

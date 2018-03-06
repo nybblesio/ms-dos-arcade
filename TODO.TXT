@@ -29,6 +29,7 @@
           : text field processing functions
 
           : error pop-up window with button
+- mouse.8 : drawing mouse cursor not clipping
 
 ษอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
 บ DONE                                                                    บ

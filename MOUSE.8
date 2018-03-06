@@ -180,7 +180,9 @@ _mouse_draw:
     mov     dh, 16
     mov     bx, 1000_0000_0000_0000xb
 
-m0: cs mov  ax, [si]
+m0: ; need to clip on y & x here
+    ;
+    cs mov  ax, [si]
     test    ax, bx
     jnz     >m1
     es mov  b[di], 0
@@ -350,9 +352,9 @@ mouse_init:
     push    0
     call    mouse_cursor
     add     sp, 2
-    push    0efh
+    push    0feh
     push    0
-    push    0efh
+    push    0feh
     push    0
     call    mouse_range
     add     sp, 8
