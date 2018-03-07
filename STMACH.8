@@ -1,0 +1,57 @@
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ banked                                            ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ copyright (C) 2017 jeff panici                    ³
+;³ https://nybbles.io                                ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+st_action struc [bp]
+    st_code      db ?
+    st_pad1      db ?
+    st_callback  dw ?
+ends
+
+st_def macro
+    db #1, 0
+    dw #2
+#em
+
+st_push macro
+    push    bx
+    sub     st_stack_ptr, 2
+    mov     bx, st_stack_ptr
+    mov     w[bx], #1
+    pop     bx
+#em
+
+st_pop macro
+    add     st_stack_ptr, 2
+#em
+
+st_top macro
+    push    bx
+    mov     bx, st_stack_ptr
+    mov     bp, w[bx]
+    pop     bx
+#em
+
+st_chk macro
+    push    bp
+    st_top
+    mov     al, 0
+    cmp     st_code, #1
+    jne     >m0
+    mov     al, 1
+m0: pop     bp
+#em
+
+st_stack_top:
+    dw 16 dup(?)
+st_stack_bot:
+
+st_stack_ptr    dw  offset st_stack_bot
+

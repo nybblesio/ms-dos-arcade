@@ -77,7 +77,7 @@ bank_file_header:
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-bank_init:
+bk_init:
     alloc   SZ_BANK_HDRS_PARA, offset bank_hdrs_seg
     memset  bank_hdrs_seg, 0, SZ_BANK_HDRS, 0
     mov     bank_hdrs_off, 0

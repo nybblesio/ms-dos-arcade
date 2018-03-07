@@ -26,13 +26,14 @@ include vga.8
 include video.8
 include mouse.8
 include sound.8
+include caret.8
+include button.8
+include txtfield.8
+include stmach.8
+include msgbox.8
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё editor constants                                  Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё constants                                         Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 
 STATE_NO_FILE   equ 1
@@ -45,91 +46,14 @@ STATE_PAL_BANK  equ 7
 STATE_BG_BANK   equ 8
 STATE_MSGBOX    equ 9
 
-F_BTN_NONE      equ 0000_0000_0000_0000xb
-F_BTN_VISIBLE   equ 0000_0000_0000_0001xb
-F_BTN_ENABLED   equ 0000_0000_0000_0010xb
-F_BTN_END       equ 1000_0000_0000_0000xb
-
-F_TXT_NONE      equ 0000_0000xb
-F_TXT_READONLY  equ 0000_0001xb
-F_TXT_EDIT      equ 0000_0010xb
-F_TXT_END       equ 1000_0000xb
-
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё editor structures & variables                     Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё structures & variables                            Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
-
-state_action struc [bp]
-    st_code      db ?
-    st_pad1      db ?
-    st_callback  dw ?
-ends
-
-state_def macro
-    db #1, 0
-    dw #2
-#em
-
-valid_key struc [bp]
-    vk_code     db ?
-    vk_mod_code db ?
-    vk_ascii    db ?
-    vk_pad1     db ?
-ends
-
-valid_key_def macro
-    db #1, #2, #3, 0
-#em
-
-text_field struc [bp]
-    txt_flags       db ?
-    txt_char_idx    db ?
-    txt_buffer      dw ?
-    txt_pos         dw ?
-    txt_keys        dw ?
-    txt_callback    dw ?
-ends
-
-text_field_def macro
-    db #1, 0
-    dw #2, #3, #4, #5
-#em
-
-button struc [bp]
-    btn_flags   dw ?
-    btn_txt     dw ?
-    btn_txt_pos dw ?
-    btn_pos     dw ?
-    btn_size    dw ?
-    btn_func    dw ?
-ends
-
-buttondef macro
-    dw #1, #2, #3, #4, #5, #6
-#em
-
-btn_set macro
-    push    bp
-    mov     bp, #1
-    mov     btn_flags, #2
-    pop     bp
-#em
 
 even
 
-exit_code           db      ?
-temp_ptr            dw      ?
-fps                 db      ?
-caret_vis           db      ?
-caret_pos           dw      ?
-caret_enabled       db      0
-msgbox_enabled      db      0
-draw_flag           db      ?
-mouse_data:         dw      2 dup (?)
+temp_ptr    dw  ?
+mouse_data: dw  2 dup (?)
 
 frame_rate:
     strdef  '00'
@@ -187,170 +111,134 @@ msgbox_title:
 
 buttons:
 btn_new:
-    buttondef F_BTN_ENABLED or F_BTN_VISIBLE, new_label, 8 by 23, 0 by 20, 38 by 10, btn_new_cb
+    btn_def F_BTN_ENABLED or F_BTN_VISIBLE, new_label, 8 by 23, 0 by 20, 38 by 10, btn_new_cb
 
 btn_load:
-    buttondef F_BTN_ENABLED or F_BTN_VISIBLE, load_label, 7 by 35, 0 by 32, 38 by 10, btn_load_cb
+    btn_def F_BTN_ENABLED or F_BTN_VISIBLE, load_label, 7 by 35, 0 by 32, 38 by 10, btn_load_cb
 
 btn_save:
-    buttondef F_BTN_VISIBLE, save_label, 7 by 47, 0 by 44, 38 by 10, btn_save_cb
+    btn_def F_BTN_VISIBLE, save_label, 7 by 47, 0 by 44, 38 by 10, btn_save_cb
 
 btn_exit:
-    buttondef F_BTN_ENABLED or F_BTN_VISIBLE, exit_label, 7 by 59, 0 by 56, 38 by 10, btn_exit_cb
+    btn_def F_BTN_ENABLED or F_BTN_VISIBLE, exit_label, 7 by 59, 0 by 56, 38 by 10, btn_exit_cb
 
 btn_add:
-    buttondef F_BTN_VISIBLE, add_label, 10 by 203, 0 by 200, 38 by 10, btn_add_bank_cb
+    btn_def F_BTN_VISIBLE, add_label, 10 by 203, 0 by 200, 38 by 10, btn_add_bank_cb
 
 btn_remove:
-    buttondef F_BTN_VISIBLE, remove_label, 2 by 215, 0 by 212, 38 by 10, btn_remove_bank_cb
+    btn_def F_BTN_VISIBLE, remove_label, 2 by 215, 0 by 212, 38 by 10, btn_remove_bank_cb
 
 btn_clear:
-    buttondef F_BTN_VISIBLE, clear_label, 5 by 227, 0 by 224, 38 by 10, btn_clear_bank_cb
+    btn_def F_BTN_VISIBLE, clear_label, 5 by 227, 0 by 224, 38 by 10, btn_clear_bank_cb
 
 btn_ok:
-    buttondef F_BTN_NONE, ok_label, 220 by 108, 205 by 105, 38 by 10, btn_ok_cb
+    btn_def F_BTN_NONE, ok_label, 220 by 108, 205 by 105, 38 by 10, btn_ok_cb
 
 btn_cancel:
-    buttondef F_BTN_NONE, cancel_label, 167 by 108, 165 by 105, 38 by 10, btn_cancel_cb
+    btn_def F_BTN_NONE, cancel_label, 167 by 108, 165 by 105, 38 by 10, btn_cancel_cb
 
-    buttondef F_BTN_END, 0, 0, 0, 0
-
-
-input_events:
-quit_key_evt:
-    def_inp_evt     T_INPUT_KEY, K_ESC
-    def_inp_evt     0,           0
-
-input_bindings:
-quit_bind:
-    def_inp_bind    B_QUIT,     'QUIT            ', exit_cb,   quit_key_evt,     0,                0, 0
-    def_inp_bind    0,          '                ', 0,         0,                0,                0, 0
+    btn_def F_BTN_END, 0, 0, 0, 0
 
 valid_fname_keys:
-    valid_key_def   002h,    0,  '1'
-    valid_key_def   003h,    0,  '2'
-    valid_key_def   004h,    0,  '3'
-    valid_key_def   005h,    0,  '4'
-    valid_key_def   006h,    0,  '5'
-    valid_key_def   007h,    0,  '6'
-    valid_key_def   008h,    0,  '7'
-    valid_key_def   009h,    0,  '8'
-    valid_key_def   00ah,    0,  '9'
-    valid_key_def   00bh,    0,  '0'
-    valid_key_def   01eh,    0,  'A'
-    valid_key_def   030h,    0,  'B'
-    valid_key_def   02eh,    0,  'C'
-    valid_key_def   020h,    0,  'D'
-    valid_key_def   012h,    0,  'E'
-    valid_key_def   021h,    0,  'F'
-    valid_key_def   022h,    0,  'G'
-    valid_key_def   023h,    0,  'H'
-    valid_key_def   017h,    0,  'I'
-    valid_key_def   024h,    0,  'J'
-    valid_key_def   025h,    0,  'K'
-    valid_key_def   026h,    0,  'L'
-    valid_key_def   032h,    0,  'M'
-    valid_key_def   031h,    0,  'N'
-    valid_key_def   018h,    0,  'O'
-    valid_key_def   019h,    0,  'P'
-    valid_key_def   010h,    0,  'Q'
-    valid_key_def   013h,    0,  'R'
-    valid_key_def   01fh,    0,  'S'
-    valid_key_def   014h,    0,  'T'
-    valid_key_def   016h,    0,  'U'
-    valid_key_def   02fh,    0,  'V'
-    valid_key_def   011h,    0,  'W'
-    valid_key_def   02dh,    0,  'X'
-    valid_key_def   015h,    0,  'Y'
-    valid_key_def   02ch,    0,  'Z'
-    valid_key_def   034h,    0,  '.'
-    valid_key_def   00ch,    0,  '-'
-    valid_key_def   00ch, 02ah,  '_'
-    valid_key_def   0,       0,   0
+    vk_def   002h,    0,  '1'
+    vk_def   003h,    0,  '2'
+    vk_def   004h,    0,  '3'
+    vk_def   005h,    0,  '4'
+    vk_def   006h,    0,  '5'
+    vk_def   007h,    0,  '6'
+    vk_def   008h,    0,  '7'
+    vk_def   009h,    0,  '8'
+    vk_def   00ah,    0,  '9'
+    vk_def   00bh,    0,  '0'
+    vk_def   01eh,    0,  'A'
+    vk_def   030h,    0,  'B'
+    vk_def   02eh,    0,  'C'
+    vk_def   020h,    0,  'D'
+    vk_def   012h,    0,  'E'
+    vk_def   021h,    0,  'F'
+    vk_def   022h,    0,  'G'
+    vk_def   023h,    0,  'H'
+    vk_def   017h,    0,  'I'
+    vk_def   024h,    0,  'J'
+    vk_def   025h,    0,  'K'
+    vk_def   026h,    0,  'L'
+    vk_def   032h,    0,  'M'
+    vk_def   031h,    0,  'N'
+    vk_def   018h,    0,  'O'
+    vk_def   019h,    0,  'P'
+    vk_def   010h,    0,  'Q'
+    vk_def   013h,    0,  'R'
+    vk_def   01fh,    0,  'S'
+    vk_def   014h,    0,  'T'
+    vk_def   016h,    0,  'U'
+    vk_def   02fh,    0,  'V'
+    vk_def   011h,    0,  'W'
+    vk_def   02dh,    0,  'X'
+    vk_def   015h,    0,  'Y'
+    vk_def   02ch,    0,  'Z'
+    vk_def   034h,    0,  '.'
+    vk_def   00ch,    0,  '-'
+    vk_def   00ch, 02ah,  '_'
+    vk_def   0,       0,   0
 
 valid_hex_keys:
-    valid_key_def   002h,   0,  '1'
-    valid_key_def   003h,   0,  '2'
-    valid_key_def   004h,   0,  '3'
-    valid_key_def   005h,   0,  '4'
-    valid_key_def   006h,   0,  '5'
-    valid_key_def   007h,   0,  '6'
-    valid_key_def   008h,   0,  '7'
-    valid_key_def   009h,   0,  '8'
-    valid_key_def   00ah,   0,  '9'
-    valid_key_def   00bh,   0,  '0'
-    valid_key_def   01eh,   0,  'A'
-    valid_key_def   030h,   0,  'B'
-    valid_key_def   02eh,   0,  'C'
-    valid_key_def   020h,   0,  'D'
-    valid_key_def   012h,   0,  'E'
-    valid_key_def   021h,   0,  'F'
-    valid_key_def   0,      0,   0
+    vk_def   002h,   0,  '1'
+    vk_def   003h,   0,  '2'
+    vk_def   004h,   0,  '3'
+    vk_def   005h,   0,  '4'
+    vk_def   006h,   0,  '5'
+    vk_def   007h,   0,  '6'
+    vk_def   008h,   0,  '7'
+    vk_def   009h,   0,  '8'
+    vk_def   00ah,   0,  '9'
+    vk_def   00bh,   0,  '0'
+    vk_def   01eh,   0,  'A'
+    vk_def   030h,   0,  'B'
+    vk_def   02eh,   0,  'C'
+    vk_def   020h,   0,  'D'
+    vk_def   012h,   0,  'E'
+    vk_def   021h,   0,  'F'
+    vk_def   0,      0,   0
 
 valid_dec_keys:
-    valid_key_def   002h,   0,  '1'
-    valid_key_def   003h,   0,  '2'
-    valid_key_def   004h,   0,  '3'
-    valid_key_def   005h,   0,  '4'
-    valid_key_def   006h,   0,  '5'
-    valid_key_def   007h,   0,  '6'
-    valid_key_def   008h,   0,  '7'
-    valid_key_def   009h,   0,  '8'
-    valid_key_def   00ah,   0,  '9'
-    valid_key_def   00bh,   0,  '0'
-    valid_key_def   0,      0,   0
+    vk_def   002h,   0,  '1'
+    vk_def   003h,   0,  '2'
+    vk_def   004h,   0,  '3'
+    vk_def   005h,   0,  '4'
+    vk_def   006h,   0,  '5'
+    vk_def   007h,   0,  '6'
+    vk_def   008h,   0,  '7'
+    vk_def   009h,   0,  '8'
+    vk_def   00ah,   0,  '9'
+    vk_def   00bh,   0,  '0'
+    vk_def   0,      0,   0
 
 text_fields:
 bank_file_field:
-    text_field_def  F_TXT_READONLY, temp_fname, 42 by 10, valid_fname_keys, bank_fname_cb
+    tf_def  F_TXT_READONLY, temp_fname, 42 by 10, valid_fname_keys, bank_fname_cb
 
-    text_field_def  F_TXT_END, 0, 0, 0, 0
+    tf_def  F_TXT_END, 0, 0, 0, 0
 
 no_file_state:
-    state_def   STATE_NO_FILE, no_file_cb
+    st_def   STATE_NO_FILE, no_file_cb
 
 new_file_state:
-    state_def   STATE_NEW_FILE, new_file_cb
+    st_def   STATE_NEW_FILE, new_file_cb
 
 load_file_state:
-    state_def   STATE_LOAD_FILE, load_file_cb
+    st_def   STATE_LOAD_FILE, load_file_cb
 
 no_bank_state:
-    state_def   STATE_NO_BANK, no_bank_cb
+    st_def   STATE_NO_BANK, no_bank_cb
 
 tile_bank_state:
-    state_def   STATE_TILE_BANK, tile_bank_cb
+    st_def   STATE_TILE_BANK, tile_bank_cb
 
 spr_bank_state:
-    state_def   STATE_SPR_BANK, spr_bank_cb
+    st_def   STATE_SPR_BANK, spr_bank_cb
 
 msgbox_state:
-    state_def   STATE_MSGBOX, msgbox_cb
-
-st_stack_top:
-    dw 16 dup(?)
-st_stack_bot:
-
-st_stack_ptr    dw  offset st_stack_bot
-
-st_push macro
-    push    bx
-    sub     st_stack_ptr, 2
-    mov     bx, st_stack_ptr
-    mov     w[bx], #1
-    pop     bx
-#em
-
-st_pop macro
-    add     st_stack_ptr, 2
-#em
-
-st_top macro
-    push    bx
-    mov     bx, st_stack_ptr
-    mov     bp, w[bx]
-    pop     bx
-#em
+    st_def   STATE_MSGBOX, msgbox_cb
 
 msgbox_lines:
 msgbox_line0:   strresv 32
@@ -371,47 +259,67 @@ temp_fname:
 bank_fname:
     filename    '            '
 
+fps                 db      ?
+exit_code           db      ?
+draw_flag           db      ?
+
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё state machine callbacks                           Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё msgbox_show                                       Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 msgbox_show:
+    st_chk  STATE_MSGBOX
+    cmp     al, 1
+    je      >l0
     st_push msgbox_state
     mov     b msgbox_enabled, 1
-    btn_set btn_ok, F_BTN_ENABLED or F_BTN_VISIBLE
-    btn_set btn_cancel, F_BTN_ENABLED or F_BTN_VISIBLE
-    ret
+    bt_set  btn_ok, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_cancel, F_BTN_ENABLED or F_BTN_VISIBLE
+l0: ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё msgbox_cb                                         Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 msgbox_cb:
-    ;call    buttons_fire
-    next_key
+    bt_fire mouse_data, buttons
+    key
     cmp     al, K_ESC
-    jne     >l0
-    mov     b msgbox_enabled, 0
-    btn_set btn_ok, F_BTN_NONE
-    btn_set btn_cancel, F_BTN_NONE
-    st_pop
-l0: mov     al, 1
+    je      >l0
+    cmp     al, K_ENTER
+    je      >l1
+    mov     al, 1
+    ret
+l0: call    btn_cancel_cb
+    ret
+l1: call    btn_ok_cb
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё no_file_cb                                        Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 no_file_cb:
-    call    buttons_fire
+    bt_fire mouse_data, buttons
     mov     al, 0
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё new_file_cb                                       Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 new_file_cb:
-    call    txtflds_update
+    tf_upd  text_fields
     mov     al, 1
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё load_file_cb                                      Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 load_file_cb:
-    call    txtflds_update
+    tf_upd  text_fields
     mov     al, 1
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё bank_fname_cb                                     Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 bank_fname_cb:
     cmp     al, 0
     je      >l1
@@ -420,7 +328,8 @@ bank_fname_cb:
     ; enforce .bnk extension
 
 
-l1: push    bp
+l1: bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
+    push    bp
     st_top
     cmp     st_code, STATE_NEW_FILE
     jne     >l0
@@ -428,321 +337,113 @@ l1: push    bp
 l0: pop     bp
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё no_bank_cb                                        Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 no_bank_cb:
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё tile_bank_cb                                      Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 tile_bank_cb:
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё spr_bank_cb                                       Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 spr_bank_cb:
     frect   17 by 43, 144 by 144, 8 by 0
     rect    42 by 16, 146 by 145, 0 by 0
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё exit_cb                                           Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 exit_cb:
-    call    reset_timer_isr
-    call    reset_keyboard_isr
-    mode_03
+    call    tm_shutdown
+    call    io_shutdown
+    call    vg_shutdown
     mov     ah, 04ch
     mov     al, exit_code
     int     21h
     ret
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё text field functions                              Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
-;юддддддддддддддддддддддддддддддддддддддддддддддддддды
-find_key_field:
-    mov     bp, text_fields
-l0: mov     al, txt_flags
-    test    al, F_TXT_END
-    jnz     >l1
-    mov     al, txt_flags
-    test    al, F_TXT_EDIT
-    jz      l0
-    ret
-l1: mov     bp, 0
-    ret
-
-clamp_char_idx:
-    mov     al, 0
-    cmp     bl, 0
-    je      >l0
-    push    bp
-    mov     bp, txt_buffer
-    mov     cl, b[bp]
-    pop     bp
-    cmp     bl, cl
-    jge     >l1
-    ret
-l0: mov     al, 1
-    ret
-l1: mov     al, 2
-    ret
-
-text_field_escape:
-    mov     cl, F_TXT_READONLY
-    mov     txt_flags, cl
-    mov     al, 0
-    cs call [txt_callback]
-    ret
-
-text_field_return:
-    mov     cl, F_TXT_READONLY
-    mov     txt_flags, cl
-    mov     al, 1
-    cs call [txt_callback]
-    ret
-
-text_field_left:
-    call    clamp_char_idx
-    cmp     al, 1
-    je      >l0
-    dec     bl
-    mov     b txt_char_idx, bl
-l0: ret
-
-text_field_right:
-    call    clamp_char_idx
-    cmp     al, 2
-    je      >l0
-    push    bp
-    mov     bp, txt_buffer
-    inc     bp
-    add     bp, bx
-    mov     cl, b[bp]
-    cmp     cl, 020h
-    jne     >l1
-    mov     al, 3
-    pop     bp
-    ret
-l1: pop     bp
-    inc     bl
-    mov     b txt_char_idx, bl
-l0: ret
-
-text_field_home:
-    mov     bl, 0
-    mov     b txt_char_idx, bl
-    ret
-
-text_field_end:
-l0: call    text_field_right
-    cmp     al, 2
-    jb      l0
-    ret
-
-text_field_backspace:
-    call    clamp_char_idx
-    cmp     al, 1
-    je      >l0
-    dec     bl
-    mov     b txt_char_idx, bl
-    call    text_field_delete
-l0: ret
-
-text_field_delete:
-    call    clamp_char_idx
-    cmp     al, 2
-    je      >l1
-    push    bp
-    xor     cx, cx
-    mov     bp, txt_buffer
-    mov     cl, b[bp]
-    inc     bp
-    add     bp, bx
-    inc     bp
-    mov     si, bp
-    dec     bp
-    mov     di, bp
-    sub     cl, bl
-    cld
-l0: mov     al, b[si]
-    mov     b[di], al
-    inc     si
-    inc     di
-    ;lodsb
-    ;stosb
-    loop    l0
-    pop     bp
-    push    bp
-    mov     bp, txt_buffer
-    mov     cl, b[bp]
-    add     bp, cx
-    mov     b[bp], 020h
-    pop     bp
-l1: ret
-
-text_field_keys:
-    push    bp
-    mov     bp, txt_keys
-l0: mov     dl, b vk_ascii
-    mov     cl, b vk_code
-    cmp     cl, 0
-    je      >l2
-    cmp     cl, al
-    jne     >l1
-    pop     bp
-    call    clamp_char_idx
-    cmp     al, 2
-    je      >l3
-    push    bp
-    mov     bp, txt_buffer
-    inc     bp
-    add     bp, bx
-    mov     b[bp], dl
-    pop     bp
-    inc     bl
-    mov     b txt_char_idx, bl
-    ret
-l1: add     bp, type valid_key
-    jmp     l0
-l2: pop     bp
-l3: ret
-
-txtflds_update:
-    call    find_key_field
-    cmp     bp, 0
-    jnz     >l0
-    ret
-l0: xor     ax, ax
-    xor     bx, bx
-    mov     bl, b txt_char_idx
-l8: next_key
-    cmp     al, 0
-    je      >l1
-    cmp     al, 0e0h
-    je      l8
-    cmp     al, K_ESC
-    je      >l6
-    cmp     al, K_ENTER
-    je      >l7
-    cmp     al, K_LEFT
-    je      >l2
-    cmp     al, K_RIGHT
-    je      >l3
-    cmp     al, K_BACKSPACE
-    je      >l4
-    cmp     al, K_DELETE
-    je      >l5
-    cmp     al, K_HOME
-    je      >l9
-    cmp     al, K_END
-    je      >j0
-    call    text_field_keys
-    jmp     l0
-l1: ret
-l2: call    text_field_left
-    ret
-l3: call    text_field_right
-    ret
-l4: call    text_field_backspace
-    ret
-l5: call    text_field_delete
-    ret
-l6: call    text_field_escape
-    ret
-l7: call    text_field_return
-    ret
-l9: call    text_field_home
-    ret
-j0: call    text_field_end
-    ret
-
-;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё button functions & callbacks                      Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё btn_ok_cb                                         Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 btn_ok_cb:
     mov     al, 1
     mov     msgbox_enabled, 0
-    btn_set btn_ok, F_BTN_NONE
-    btn_set btn_cancel, F_BTN_NONE
+    bt_set  btn_ok, F_BTN_NONE
+    bt_set  btn_cancel, F_BTN_NONE
     st_pop
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё btn_cancel_cb                                     Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 btn_cancel_cb:
     mov     al, 0
     mov     msgbox_enabled, 0
-    btn_set btn_ok, F_BTN_NONE
-    btn_set btn_cancel, F_BTN_NONE
+    bt_set  btn_ok, F_BTN_NONE
+    bt_set  btn_cancel, F_BTN_NONE
     st_pop
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё btn_new_cb                                        Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 btn_new_cb:
+    bt_set  btn_new, F_BTN_VISIBLE
     st_push new_file_state
     mov     bp, bank_file_field
     mov     txt_flags, F_TXT_EDIT
     xor     bx, bx
     mov     bl, txt_char_idx
-    call    text_field_end
-    ret
-
-btn_load_cb:
-    call    msgbox_show
-    ret
-
-btn_save_cb:
-    ret
-
-btn_add_bank_cb:
-    ret
-
-btn_remove_bank_cb:
-    ret
-
-btn_clear_bank_cb:
-    ret
-
-btn_exit_cb:
-    jmp     exit_cb
-
-buttons_fire:
-    cs mov  bp, mouse_data
-    cs mov  bx, ms_pos
-    cs mov  ax, ms_btn
-    test    al, F_LEFT_MOUSE_BTN
-    jnz     >l0
-    ret
-l0: cs mov  bp, buttons
-l1: cs mov  ax, btn_flags
-    test    ax, F_BTN_END
-    jz      >l2
-    ret
-l2: test    ax, F_BTN_ENABLED
-    jz      >l4
-l3: cs mov  ax, btn_pos
-    cs mov  cx, btn_size
-    cs mov  dx, ax
-    add     dx, cx
-    cmp     bh, al
-    jb      >l4
-    cmp     bh, dl
-    ja      >l4
-    cmp     bl, ah
-    jb      >l4
-    cmp     bl, dh
-    ja      >l4
-    cmp     btn_func, 0
-    jz      >l4
-    cs call [btn_func]
-    ret
-l4: add     bp, type button
-    jmp     l1
+    call    txt_end
     ret
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё timer callbacks                                   Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё btn_load_cb                                       Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+btn_load_cb:
+    bt_set  btn_load, F_BTN_VISIBLE
+    call    msgbox_show
+    ret
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё btn_save_cb                                       Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+btn_save_cb:
+    ret
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё btn_add_bank_cb                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+btn_add_bank_cb:
+    ret
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё btn_remove_bank_cb                                Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+btn_remove_bank_cb:
+    ret
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё btn_clear_bank_cb                                 Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+btn_clear_bank_cb:
+    ret
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё btn_exit_cb                                       Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+btn_exit_cb:
+    jmp     exit_cb
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё fps_timer                                         Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 fps_timer:
     tm_clr
@@ -753,83 +454,9 @@ fps_timer:
     cs mov  fps, 0
     ret
 
-caret_timer:
-    tm_clr
-    not     caret_vis
-    ret
-
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё drawing functions                                 Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё base_draw                                         Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
-msgbox_draw:
-    cmp     msgbox_enabled, 1
-    je      >l0
-    ret
-l0: frect   50 by 33, 196 by 85, 8 by 0
-    rect    50 by 33, 196 by 85, 0 by 0
-    frect   52 by 35, 193 by 7,  9 by 0
-    string  offset micro_font, msgbox_title, 110 by 36, 7 by 0, 1
-    xor     bx, bx
-    xor     cx, cx
-    mov     bh, 53
-    mov     bl, 44
-    mov     bp, msgbox_lines
-l1: mov     cl, b[bp]
-    cmp     cl, 0feh
-    jne     >l3
-    ret
-l3: string  offset micro_font, bp, bx, 7 by 0, 1
-    add     bl, 6
-    inc     bp
-    add     bp, cx
-    jmp     l1
-
-txtflds_draw:
-    push    bp, ax, bx, cx, dx
-    mov     caret_enabled, 0
-    mov     bp, text_fields
-l0: xor     ax, ax
-    mov     cx, 8 by 0
-    mov     al, txt_flags
-    test    al, F_TXT_END
-    jnz     >l2
-    mov     al, txt_flags
-    test    al, F_TXT_EDIT
-    jz      >l1
-    mov     cx, 7 by 0
-l1: mov     ax, txt_pos
-    mov     bx, txt_buffer
-    string  offset micro_font, bx, ax, cx, 1
-    cmp     ch, 7
-    jne     >l3
-    mov     bx, ax
-    xor     ax, ax
-    xor     cx, cx
-    mov     cl, 6
-    mov     al, b txt_char_idx
-    mul     cx
-    add     bh, al
-    mov     caret_pos, bx
-    mov     caret_enabled, 1
-l3: add     bp, type text_field
-    jmp     l0
-l2: pop     dx, cx, bx, ax, bp
-    ret
-
-caret_draw:
-    cs cmp  caret_enabled, 1
-    jnz     >l0
-    cs mov  al, caret_vis
-    cmp     al, 0
-    jz      >l0
-    cs mov  ax, caret_pos
-    frect   ax, 5 by 5, 7 by 0
-l0: ret
-
 base_draw:
     frect   0 by 0, 38 by 256, 8 by 0
     vline   38 by 0, 256, 0 by 0
@@ -849,61 +476,33 @@ base_draw:
     string  offset micro_font, banks_label, 4 by 191, 7 by 0, 1
     ret
 
-button_draw:
-    cs mov  ax, btn_pos
-    cs mov  cx, btn_size
-    xor     bx, bx
-    mov     bl, ch
-    frect   ax, cx, 9 by 0
-    hline   ax, bx, 0 by 0
-    cs mov  si, btn_txt
-    cs mov  dx, btn_txt_pos
-    push    ax
-    cs mov  ax, btn_flags
-    test    ax, F_BTN_ENABLED
-    jz      >l0
-    string  offset micro_font, si, dx, 7 by 0, 1
-    jmp     >l1
-l0: string  offset micro_font, si, dx, 8 by 0, 1
-l1: pop     ax
-    add     al, cl
-    hline   ax, bx, 0 by 0
-    ret
-
-buttons_draw:
-    cs mov  bp, buttons
-l0: cs mov  ax, btn_flags
-    test    ax, F_BTN_END
-    jz      >l1
-    ret
-l1: test    ax, F_BTN_VISIBLE
-    jz      >l2
-    call    button_draw
-l2: add     bp, type button
-    jmp     l0
-    ret
-
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё draw                                              Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 draw:
-    cs cmp  draw_flag, 1
+    cmp     draw_flag, 1
     je      >l0
     ret
 
-l0: cs mov  draw_flag, 0
+l0: mov     draw_flag, 0
     clear
     call    base_draw
-    call    txtflds_draw
-    call    caret_draw
+    tf_draw text_fields
+    call    cu_draw
     call    msgbox_draw
-    call    buttons_draw
+    bt_draw buttons
 
 l5:
 #if DEBUG
     string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
 #endif
-    mdraw   mouse_data, cursor_pointer2
+    mo_draw mouse_data, cursor_pointer2
 
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё show                                              Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 show:
     is_vblank
     cmp     al, 0
@@ -911,18 +510,12 @@ show:
     ret
 l0: flip
     wait_novblank
-    ;update_input    input_events
-    ;fire_bindings   input_bindings
     cs inc  fps
     cs mov  draw_flag, 1
     ret
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё main tool engine                                  Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё allocate                                          Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 allocate:
     alloc   SZ_CTRL_RAM / 16,  offset ctrl_ram_ptr
@@ -944,30 +537,32 @@ allocate:
 
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё init                                              Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 init:
     call    allocate
-    call    bank_init
-    mode_13
-    mode_p  modeq_params
-    call    mouse_init
-    call    init_keyboard_isr
-    call    init_timer_isr
-
-    timer   offset fps_timer, 60
-    timer   offset caret_timer, 25
-
+    call    bk_init
+    call    vg_init
+    call    mo_init
+    call    io_init
+    call    tm_init
+    call    cu_init
+    tm_new  offset fps_timer, 60
     st_push no_file_state
-
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё update                                            Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 update:
     tm_fire
-    mread   mouse_data
+    mo_read mouse_data
     st_top
-    cs call [st_callback]
+    call    [st_callback]
     cmp     al, 1
     je      >p1
-p0: next_key
+p0: key
     cmp     al, 0
     je      >p1
     cmp     al, K_ESC
@@ -975,18 +570,17 @@ p0: next_key
 p1: ret
 p2: jmp     exit_cb
 
-;
-; entry point
-;
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё start                                             Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 start:
     call    init
 
-;
-; the heart
-;
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё tool_loop                                         Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 tool_loop:
-    cs call update
-    cs call draw
-    cs call show
+    call    update
+    call    draw
+    call    show
     jmp     tool_loop
-    jmp     exit_cb

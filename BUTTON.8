@@ -1,0 +1,137 @@
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ banked                                            ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ copyright (C) 2017 jeff panici                    ³
+;³ https://nybbles.io                                ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ constants                                         ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+F_BTN_NONE      equ 0000_0000_0000_0000xb
+F_BTN_VISIBLE   equ 0000_0000_0000_0001xb
+F_BTN_ENABLED   equ 0000_0000_0000_0010xb
+F_BTN_END       equ 1000_0000_0000_0000xb
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ structures                                        ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+button struc [bp]
+    btn_flags   dw ?
+    btn_txt     dw ?
+    btn_txt_pos dw ?
+    btn_pos     dw ?
+    btn_size    dw ?
+    btn_func    dw ?
+ends
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ macros                                            ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_def macro
+    dw #1, #2, #3, #4, #5, #6
+#em
+
+bt_set macro
+    push    bp
+    mov     bp, #1
+    mov     btn_flags, #2
+    pop     bp
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _btn_fire                                         ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_btn_fire:
+    mov     bp, sp
+    mov     bp, [bp + 4]
+    mov     bx, ms_pos
+    mov     ax, ms_btn
+    test    al, F_LEFT_MOUSE_BTN
+    jnz     >l4
+    ret
+l4: mov     bp, sp
+    mov     bp, [bp + 2]
+l0: mov     ax, btn_flags
+    test    ax, F_BTN_END
+    jz      >l1
+    ret
+l1: test    ax, F_BTN_ENABLED
+    jz      >l3
+l2: mov     ax, btn_pos
+    mov     cx, btn_size
+    mov     dx, ax
+    add     dx, cx
+    cmp     bh, al
+    jb      >l3
+    cmp     bh, dl
+    ja      >l3
+    cmp     bl, ah
+    jb      >l3
+    cmp     bl, dh
+    ja      >l3
+    cmp     btn_func, 0
+    jz      >l3
+    call    [btn_func]
+    ret
+l3: add     bp, type button
+    jmp     l0
+    ret
+
+bt_fire macro
+    push    bp, ax, bx, cx, dx
+    push    #1, #2
+    call    _btn_fire
+    add     sp, 4
+    pop     dx, cx, bx, ax, bp
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _btn_draw                                         ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_btn_draw:
+    cs mov  ax, btn_pos
+    cs mov  cx, btn_size
+    xor     bx, bx
+    mov     bl, ch
+    frect   ax, cx, 9 by 0
+    hline   ax, bx, 0 by 0
+    cs mov  si, btn_txt
+    cs mov  dx, btn_txt_pos
+    push    ax
+    cs mov  ax, btn_flags
+    test    ax, F_BTN_ENABLED
+    jz      >l0
+    string  offset micro_font, si, dx, 7 by 0, 1
+    jmp     >l1
+l0: string  offset micro_font, si, dx, 8 by 0, 1
+l1: pop     ax
+    add     al, cl
+    hline   ax, bx, 0 by 0
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _btns_draw                                        ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_btns_draw:
+l0: cs mov  ax, btn_flags
+    test    ax, F_BTN_END
+    jz      >l1
+    ret
+l1: test    ax, F_BTN_VISIBLE
+    jz      >l2
+    call    _btn_draw
+l2: add     bp, type button
+    jmp     l0
+    ret
+
+bt_draw macro
+    push    bp, ax, bx, cx, dx
+    mov     bp, #1
+    call    _btns_draw
+    pop     dx, cx, bx, ax, bp
+#em

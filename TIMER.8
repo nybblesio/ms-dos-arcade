@@ -136,7 +136,7 @@ tm_fire macro
     pop     di, cx, ax, bp, es
 #em
 
-timer macro
+tm_new macro
     tm_free
     es mov  tm_callback, #1
     es mov  tm_frames, #2
@@ -164,7 +164,7 @@ l1: pop     ax, es
     sti
     iret
 
-init_timer_isr:
+tm_init:
     cli
     mov     bx, TIMER_60HZ
     mov     al, 00110110xb
@@ -185,7 +185,7 @@ init_timer_isr:
     sti
     ret
 
-reset_timer_isr:
+tm_shutdown:
     cli
     xor     bx, bx
     mov     al, 00110110xb

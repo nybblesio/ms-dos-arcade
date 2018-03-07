@@ -634,3 +634,11 @@ frect macro
 ;
 ;
 
+vg_init:
+    mode_13
+    mode_p  modeq_params
+    ret
+
+vg_shutdown:
+    mode_03
+    ret

@@ -46,7 +46,7 @@ get_scan_isr:
     sti
     iret
 
-_next_key:
+_key:
     cs mov  bh, key_queue_tail
     cs mov  bl, key_queue_head
     cmp     bh, bl
@@ -60,13 +60,13 @@ k0: cs mov  si, offset key_queue
     cs inc  key_queue_head
     ret
 
-next_key macro
+key macro
     push    si, bx
-    call    _next_key
+    call    _key
     pop     bx, si
 #em
 
-init_keyboard_isr:
+io_init:
     cli
     mov     ah, 035h
     mov     al, 09h
@@ -80,7 +80,7 @@ init_keyboard_isr:
     sti
     ret
 
-reset_keyboard_isr:
+io_shutdown:
     cli
     cs lds  dx, key_old_isr
     mov     ah, 025h

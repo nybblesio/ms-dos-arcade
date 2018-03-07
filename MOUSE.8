@@ -204,7 +204,7 @@ m2: inc     di
     jnz     m0
     ret
 
-mdraw macro
+mo_draw macro
     push    es, bp, ds, ax, bx, si
     mov     bp, #1
     push    ms_pos
@@ -251,7 +251,7 @@ mouse_pos:
     int     33h
     ret
 
-mread macro
+mo_read macro
     push    bp, ax, bx, cx, dx
     call    mouse_pos
     mov     bp, #1
@@ -341,13 +341,13 @@ mouse_sens:
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ mouse_init                                        ³
+;³ mo_init                                           ³
 ;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
 ;³ initialize the mouse driver                       ³
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-mouse_init:
+mo_init:
     call    mouse_reset
     push    0
     call    mouse_cursor

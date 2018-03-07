@@ -159,14 +159,14 @@ init:
     call    allocate
     mode_13
     mode_p  modeq_params
-    call    init_keyboard_isr
-    call    init_timer_isr
+    call    io_init
+    call    tm_init
     sound_init
 
     loadspr 0
     setspr  0, 0, 100, 10, F_SPR_ENABLED, 0
 
-    timer   offset fps_timer, 60
+    tm_new  offset fps_timer, 60
 
     ret
 
@@ -239,8 +239,8 @@ game_loop:
 ;
 exit:
     sound_shutdown
-    call    reset_timer_isr
-    call    reset_keyboard_isr
+    call    tm_shutdown
+    call    io_shutdown
     mode_03
     mov     ah, 04ch
     mov     al, exit_code

@@ -1,0 +1,33 @@
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ banked                                            ³
+;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
+;³                                                   ³
+;³ copyright (C) 2017 jeff panici                    ³
+;³ https://nybbles.io                                ³
+;³                                                   ³
+;³                                                   ³
+;³                                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+cu_vis       db  ?
+cu_pos       dw  ?
+cu_enabled   db  0
+
+cu_timer:
+    tm_clr
+    not     cu_vis
+    ret
+
+cu_init:
+    tm_new  offset cu_timer, 25
+    ret
+
+cu_draw:
+    cmp     cu_enabled, 1
+    jnz     >l0
+    mov     al, cu_vis
+    cmp     al, 0
+    jz      >l0
+    mov     ax, cu_pos
+    frect   ax, 5 by 5, 7 by 0
+l0: ret
