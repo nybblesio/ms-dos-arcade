@@ -261,6 +261,7 @@ no_file_cb:
 
 new_file_cb:
     call    update_text_fields
+    mov     al, 1
     ret
 
 load_file_cb:
@@ -347,6 +348,17 @@ text_field_right:
     call    clamp_char_idx
     cmp     al, 2
     je      >l0
+    push    bp
+    mov     bp, txt_buffer
+    inc     bp
+    add     bp, bx
+    mov     cl, b[bp]
+    cmp     cl, 020h
+    jne     >l1
+    mov     al, 3
+    pop     bp
+    ret
+l1: pop     bp
     inc     bl
     mov     b txt_char_idx, bl
 l0: ret
@@ -357,12 +369,9 @@ text_field_home:
     ret
 
 text_field_end:
-    push    bp
-    mov     bp, txt_buffer
-    mov     cl, b[bp]
-    mov     bl, cl
-    pop     bp
-    mov     b txt_char_idx, bl
+l0: call    text_field_right
+    cmp     al, 2
+    jb      l0
     ret
 
 text_field_backspace:
@@ -370,13 +379,8 @@ text_field_backspace:
     cmp     al, 1
     je      >l0
     dec     bl
-    push    bp
-    mov     bp, txt_buffer
-    inc     bp
-    add     bp, bx
-    mov     b[bp], 020h
-    pop     bp
     mov     b txt_char_idx, bl
+    call    text_field_delete
 l0: ret
 
 text_field_delete:
@@ -402,6 +406,8 @@ l0: mov     al, b[si]
     ;lodsb
     ;stosb
     loop    l0
+    pop     bp
+    push    bp
     mov     bp, txt_buffer
     mov     cl, b[bp]
     add     bp, cx
@@ -745,6 +751,8 @@ update:
     mread   mouse_data
     cs mov  bp, [current_state]
     cs call [state_callback]
+    cmp     al, 1
+    je      >p1
 p0: next_key
     cmp     al, 0
     je      >p1

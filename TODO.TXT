@@ -18,22 +18,30 @@
 ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
 
 - file.8: add table of error messages and a way to look them up
+
 - bank.8: determine how errors will work going back to BANKED & game
         : finish load & save
         : add function to get current -or- new data block for bank
+
 - banked.8: wire up NEW
           : wire up LOAD
           : wire up SAVE
           : wire up new BANK
+          : why lodsb/stosb not working?
 
-          : text field processing functions
-
-          : error pop-up window with button
 - mouse.8 : drawing mouse cursor not clipping
+
+- pick bank type UI: radio button list
+
+- number fields: left/right buttons for increment/decrement
+
+- key/value pair editor UI
+
+- error pop-up window but OK/EXIT button
 
 ษอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
 บ DONE                                                                    บ
 ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
 
 - size bank viewer window at bottom to show one block worth of data
-
+-text field processing functions
