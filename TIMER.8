@@ -34,7 +34,7 @@ _get_timer:
     add     bp, si
     ret
 
-ldtimer macro
+tm_load macro
     push    #1
     call    _get_timer
     add     sp, 2
@@ -54,7 +54,7 @@ l0: es cmp  tm_callback, 0
 l1: mov     bp, 0
 l2: ret
 
-ldfreetimer macro
+tm_free macro
     push    cx
     call    _get_free_timer
     pop     cx
@@ -67,13 +67,13 @@ _kill_timer:
     es rep  stosw
     ret
 
-kill_timer macro
+tm_kill macro
     push    di, cx, ax
     call    _kill_timer
     pop     ax, cx, di
 #em
 
-reset_timer macro
+tm_clr macro
     es mov  al, tm_flags
     or      al, F_TIMER_ENABLED
     and     al, not F_TIMER_READY
@@ -106,7 +106,7 @@ l2: dec     cx
     jmp     l0
 l3: ret
 
-update_timers macro
+tm_upd macro
     push    es, bp, ax, cx, di
     call    _update_timers
     pop     di, cx, ax, bp, es
@@ -130,14 +130,14 @@ l1: dec     cx
     jmp     l0
 l2: ret
 
-fire_timers macro
+tm_fire macro
     push    es, bp, ax, cx, di
     call    _fire_timers
     pop     di, cx, ax, bp, es
 #em
 
 timer macro
-    ldfreetimer
+    tm_free
     es mov  tm_callback, #1
     es mov  tm_frames, #2
     es mov  tm_count, #2
@@ -153,7 +153,7 @@ game_timer_isr:
     cs dec  old_isr_tick
     cs cmp  old_isr_tick, 0
     je      >l0
-    update_timers
+    tm_upd
     mov     al, 020h
     out     020h, al
     jmp     >l1

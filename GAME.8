@@ -116,7 +116,7 @@ _p1_up:
 l0: ret
 
 fps_timer:
-    reset_timer
+    tm_clr
     mov     di, frame_rate + 1
     xor     ax, ax
     cs mov  al, fps
@@ -229,7 +229,7 @@ start:
 ; the heart
 ;
 game_loop:
-    fire_timers
+    tm_fire
     cs call draw
     cs call show
     jmp     game_loop

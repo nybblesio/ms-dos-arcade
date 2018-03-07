@@ -17,6 +17,12 @@
 บ TASKS                                                                   บ
 ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
 
+- error pop-up window but OK/EXIT button
+
+- pick bank type UI: radio button list
+
+- mouse.8 : drawing mouse cursor not clipping
+
 - file.8: add table of error messages and a way to look them up
 
 - bank.8: determine how errors will work going back to BANKED & game
@@ -29,19 +35,16 @@
           : wire up new BANK
           : why lodsb/stosb not working?
 
-- mouse.8 : drawing mouse cursor not clipping
-
-- pick bank type UI: radio button list
 
 - number fields: left/right buttons for increment/decrement
 
 - key/value pair editor UI
 
-- error pop-up window but OK/EXIT button
 
 ษอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
 บ DONE                                                                    บ
 ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
 
 - size bank viewer window at bottom to show one block worth of data
--text field processing functions
+- text field processing functions
+- state stack
