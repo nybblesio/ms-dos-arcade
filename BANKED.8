@@ -75,26 +75,25 @@ valid_key struc [bp]
     vk_code     db ?
     vk_mod_code db ?
     vk_ascii    db ?
+    vk_pad1     db ?
 ends
 
 valid_key_def macro
-    db #1, #2, #3
+    db #1, #2, #3, 0
 #em
 
 text_field struc [bp]
     txt_flags       db ?
+    txt_char_idx    db ?
     txt_buffer      dw ?
     txt_pos         dw ?
     txt_keys        dw ?
     txt_callback    dw ?
-    txt_char_idx    db ?
-    txt_pad         db ?
 ends
 
 text_field_def macro
-    db #1
+    db #1, 0
     dw #2, #3, #4, #5
-    db 0,  0
 #em
 
 button struc [bp]
@@ -158,82 +157,84 @@ quit_bind:          def_inp_bind    B_QUIT,     'QUIT            ', exit_cb,   q
                     def_inp_bind    0,          '                ', 0,         0,                0,                0, 0
 
 valid_fname_keys:
-                    valid_key_def   016h,   0,  '1'
-                    valid_key_def   01eh,   0,  '2'
-                    valid_key_def   026h,   0,  '3'
-                    valid_key_def   025h,   0,  '4'
-                    valid_key_def   02eh,   0,  '5'
-                    valid_key_def   036h,   0,  '6'
-                    valid_key_def   03dh,   0,  '7'
-                    valid_key_def   03eh,   0,  '8'
-                    valid_key_def   046h,   0,  '9'
-                    valid_key_def   045h,   0,  '0'
-                    valid_key_def   01ch,   0,  'A'
-                    valid_key_def   032h,   0,  'B'
-                    valid_key_def   021h,   0,  'C'
-                    valid_key_def   023h,   0,  'D'
-                    valid_key_def   024h,   0,  'E'
-                    valid_key_def   02bh,   0,  'F'
-                    valid_key_def   034h,   0,  'G'
-                    valid_key_def   033h,   0,  'H'
-                    valid_key_def   043h,   0,  'I'
-                    valid_key_def   03bh,   0,  'J'
-                    valid_key_def   042h,   0,  'K'
-                    valid_key_def   04bh,   0,  'L'
-                    valid_key_def   03ah,   0,  'M'
-                    valid_key_def   031h,   0,  'N'
-                    valid_key_def   044h,   0,  'O'
-                    valid_key_def   04dh,   0,  'P'
-                    valid_key_def   015h,   0,  'Q'
-                    valid_key_def   02dh,   0,  'R'
-                    valid_key_def   01bh,   0,  'S'
-                    valid_key_def   02ch,   0,  'T'
-                    valid_key_def   03ch,   0,  'U'
-                    valid_key_def   02ah,   0,  'V'
-                    valid_key_def   01dh,   0,  'W'
-                    valid_key_def   022h,   0,  'X'
-                    valid_key_def   035h,   0,  'Y'
-                    valid_key_def   01ah,   0,  'Z'
-                    valid_key_def   049h,   0,  '.'
-                    valid_key_def   04eh,   0,  '-'
-                    valid_key_def   04eh, 012h, '_'
-                    valid_key_def   0,      0,   0
+    valid_key_def   002h,    0,  '1'
+    valid_key_def   003h,    0,  '2'
+    valid_key_def   004h,    0,  '3'
+    valid_key_def   005h,    0,  '4'
+    valid_key_def   006h,    0,  '5'
+    valid_key_def   007h,    0,  '6'
+    valid_key_def   008h,    0,  '7'
+    valid_key_def   009h,    0,  '8'
+    valid_key_def   00ah,    0,  '9'
+    valid_key_def   00bh,    0,  '0'
+    valid_key_def   01eh,    0,  'A'
+    valid_key_def   030h,    0,  'B'
+    valid_key_def   02eh,    0,  'C'
+    valid_key_def   020h,    0,  'D'
+    valid_key_def   012h,    0,  'E'
+    valid_key_def   021h,    0,  'F'
+    valid_key_def   022h,    0,  'G'
+    valid_key_def   023h,    0,  'H'
+    valid_key_def   017h,    0,  'I'
+    valid_key_def   024h,    0,  'J'
+    valid_key_def   025h,    0,  'K'
+    valid_key_def   026h,    0,  'L'
+    valid_key_def   032h,    0,  'M'
+    valid_key_def   031h,    0,  'N'
+    valid_key_def   018h,    0,  'O'
+    valid_key_def   019h,    0,  'P'
+    valid_key_def   010h,    0,  'Q'
+    valid_key_def   013h,    0,  'R'
+    valid_key_def   01fh,    0,  'S'
+    valid_key_def   014h,    0,  'T'
+    valid_key_def   016h,    0,  'U'
+    valid_key_def   02fh,    0,  'V'
+    valid_key_def   011h,    0,  'W'
+    valid_key_def   02dh,    0,  'X'
+    valid_key_def   015h,    0,  'Y'
+    valid_key_def   02ch,    0,  'Z'
+    valid_key_def   034h,    0,  '.'
+    valid_key_def   00ch,    0,  '-'
+    valid_key_def   00ch, 02ah,  '_'
+    valid_key_def   0,       0,   0
 
 valid_hex_keys:
-                    valid_key_def   016h,   0,  '1'
-                    valid_key_def   01eh,   0,  '2'
-                    valid_key_def   026h,   0,  '3'
-                    valid_key_def   025h,   0,  '4'
-                    valid_key_def   02eh,   0,  '5'
-                    valid_key_def   036h,   0,  '6'
-                    valid_key_def   03dh,   0,  '7'
-                    valid_key_def   03eh,   0,  '8'
-                    valid_key_def   046h,   0,  '9'
-                    valid_key_def   045h,   0,  '0'
-                    valid_key_def   01ch,   0,  'A'
-                    valid_key_def   032h,   0,  'B'
-                    valid_key_def   021h,   0,  'C'
-                    valid_key_def   023h,   0,  'D'
-                    valid_key_def   024h,   0,  'E'
-                    valid_key_def   02bh,   0,  'F'
-                    valid_key_def   0,      0,  0
+    valid_key_def   002h,   0,  '1'
+    valid_key_def   003h,   0,  '2'
+    valid_key_def   004h,   0,  '3'
+    valid_key_def   005h,   0,  '4'
+    valid_key_def   006h,   0,  '5'
+    valid_key_def   007h,   0,  '6'
+    valid_key_def   008h,   0,  '7'
+    valid_key_def   009h,   0,  '8'
+    valid_key_def   00ah,   0,  '9'
+    valid_key_def   00bh,   0,  '0'
+    valid_key_def   01eh,   0,  'A'
+    valid_key_def   030h,   0,  'B'
+    valid_key_def   02eh,   0,  'C'
+    valid_key_def   020h,   0,  'D'
+    valid_key_def   012h,   0,  'E'
+    valid_key_def   021h,   0,  'F'
+    valid_key_def   0,      0,   0
 
 valid_dec_keys:
-                    valid_key_def   016h,   0,  '1'
-                    valid_key_def   01eh,   0,  '2'
-                    valid_key_def   026h,   0,  '3'
-                    valid_key_def   025h,   0,  '4'
-                    valid_key_def   02eh,   0,  '5'
-                    valid_key_def   036h,   0,  '6'
-                    valid_key_def   03dh,   0,  '7'
-                    valid_key_def   03eh,   0,  '8'
-                    valid_key_def   046h,   0,  '9'
-                    valid_key_def   045h,   0,  '0'
-                    valid_key_def   0,      0,  0
+    valid_key_def   002h,   0,  '1'
+    valid_key_def   003h,   0,  '2'
+    valid_key_def   004h,   0,  '3'
+    valid_key_def   005h,   0,  '4'
+    valid_key_def   006h,   0,  '5'
+    valid_key_def   007h,   0,  '6'
+    valid_key_def   008h,   0,  '7'
+    valid_key_def   009h,   0,  '8'
+    valid_key_def   00ah,   0,  '9'
+    valid_key_def   00bh,   0,  '0'
+    valid_key_def   0,      0,   0
 
 text_fields:
-bank_file_field:    text_field_def  F_TXT_READONLY, bank_filename, 42 by 10, valid_fname_keys, file_name_cb
-                    text_field_def  F_TXT_END,                  0,        0,                0,            0
+bank_file_field:
+    text_field_def  F_TXT_READONLY, bank_filename, 42 by 10, valid_fname_keys, file_name_cb
+
+    text_field_def  F_TXT_END,                  0,        0,                0,            0
 
 no_file_state:      state_def       STATE_NO_FILE,   no_file_cb
 new_file_state:     state_def       STATE_NEW_FILE,  new_file_cb
@@ -245,7 +246,7 @@ spr_bank_state:     state_def       STATE_SPR_BANK,  spr_bank_cb
 
 current_state       dw no_file_state
 
-bank_filename:      filename        'lumber.bnk'
+bank_filename:      filename        'lumberja.bnk'
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ state machine callbacks                           ³
@@ -300,7 +301,188 @@ exit_cb:
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+find_key_field:
+    mov     bp, text_fields
+l0: mov     al, txt_flags
+    test    al, F_TXT_END
+    jnz     >l1
+    mov     al, txt_flags
+    test    al, F_TXT_EDIT
+    jz      l0
+    ret
+l1: mov     bp, 0
+    ret
+
+clamp_char_idx:
+    mov     al, 0
+    cmp     bl, 0
+    je      >l0
+    push    bp
+    mov     bp, txt_buffer
+    mov     cl, b[bp]
+    pop     bp
+    cmp     bl, cl
+    jge     >l1
+    ret
+l0: mov     al, 1
+    ret
+l1: mov     al, 2
+    ret
+
+text_field_escape:
+    ret
+
+text_field_return:
+    ret
+
+text_field_left:
+    call    clamp_char_idx
+    cmp     al, 1
+    je      >l0
+    dec     bl
+    mov     b txt_char_idx, bl
+l0: ret
+
+text_field_right:
+    call    clamp_char_idx
+    cmp     al, 2
+    je      >l0
+    inc     bl
+    mov     b txt_char_idx, bl
+l0: ret
+
+text_field_home:
+    mov     bl, 0
+    mov     b txt_char_idx, bl
+    ret
+
+text_field_end:
+    push    bp
+    mov     bp, txt_buffer
+    mov     cl, b[bp]
+    mov     bl, cl
+    pop     bp
+    mov     b txt_char_idx, bl
+    ret
+
+text_field_backspace:
+    call    clamp_char_idx
+    cmp     al, 1
+    je      >l0
+    dec     bl
+    push    bp
+    mov     bp, txt_buffer
+    inc     bp
+    add     bp, bx
+    mov     b[bp], 020h
+    pop     bp
+    mov     b txt_char_idx, bl
+l0: ret
+
+text_field_delete:
+    call    clamp_char_idx
+    cmp     al, 2
+    je      >l1
+    push    bp
+    xor     cx, cx
+    mov     bp, txt_buffer
+    mov     cl, b[bp]
+    inc     bp
+    add     bp, bx
+    inc     bp
+    mov     si, bp
+    dec     bp
+    mov     di, bp
+    sub     cl, bl
+    cld
+l0: mov     al, b[si]
+    mov     b[di], al
+    inc     si
+    inc     di
+    ;lodsb
+    ;stosb
+    loop    l0
+    mov     bp, txt_buffer
+    mov     cl, b[bp]
+    add     bp, cx
+    mov     b[bp], 020h
+    pop     bp
+l1: ret
+
+text_field_keys:
+    push    bp
+    mov     bp, txt_keys
+l0: mov     dl, b vk_ascii
+    mov     cl, b vk_code
+    cmp     cl, 0
+    je      >l2
+    cmp     cl, al
+    jne     >l1
+    pop     bp
+    call    clamp_char_idx
+    cmp     al, 2
+    je      >l3
+    push    bp
+    mov     bp, txt_buffer
+    inc     bp
+    add     bp, bx
+    mov     b[bp], dl
+    pop     bp
+    inc     bl
+    mov     b txt_char_idx, bl
+    ret
+l1: add     bp, type valid_key
+    jmp     l0
+l2: pop     bp
+l3: ret
+
 update_text_fields:
+    call    find_key_field
+    cmp     bp, 0
+    jnz     >l0
+    ret
+l0: xor     ax, ax
+    xor     bx, bx
+    mov     bl, b txt_char_idx
+l8: next_key
+    cmp     al, 0
+    je      >l1
+    cmp     al, 0e0h
+    je      l8
+    cmp     al, K_ESC
+    je      >l6
+    cmp     al, K_ENTER
+    je      >l7
+    cmp     al, K_LEFT
+    je      >l2
+    cmp     al, K_RIGHT
+    je      >l3
+    cmp     al, K_BACKSPACE
+    je      >l4
+    cmp     al, K_DELETE
+    je      >l5
+    cmp     al, K_HOME
+    je      >l9
+    cmp     al, K_END
+    je      >j0
+    call    text_field_keys
+    jmp     l0
+l1: ret
+l2: call    text_field_left
+    ret
+l3: call    text_field_right
+    ret
+l4: call    text_field_backspace
+    ret
+l5: call    text_field_delete
+    ret
+l6: call    text_field_escape
+    ret
+l7: call    text_field_return
+    ret
+l9: call    text_field_home
+    ret
+j0: call    text_field_end
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -314,6 +496,13 @@ btn_new_cb:
     cs mov  current_state, new_file_state
     cs mov  bp, bank_file_field
     cs mov  txt_flags, F_TXT_EDIT
+    xor     bl, bl
+    push    bp
+    cs mov  bp, txt_buffer
+    mov     cl, b[bp]
+    mov     bl, cl
+    pop     bp
+    mov     b txt_char_idx, bl
     cs mov  caret_enabled, 1
     ret
 
@@ -397,7 +586,7 @@ caret_timer:
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 draw_text_fields:
-    push    bp, ax, bx, cx
+    push    bp, ax, bx, cx, dx
     mov     bp, text_fields
 l0: xor     ax, ax
     mov     cx, 8 by 0
@@ -411,9 +600,19 @@ l0: xor     ax, ax
 l1: mov     ax, txt_pos
     mov     bx, txt_buffer
     string  offset micro_font, bx, ax, cx, 1
-    add     bp, type text_field
+    cmp     ch, 7
+    jne     >l3
+    mov     bx, ax
+    xor     ax, ax
+    xor     cx, cx
+    mov     cl, 6
+    mov     al, b txt_char_idx
+    mul     cx
+    add     bh, al
+    mov     caret_pos, bx
+l3: add     bp, type text_field
     jmp     l0
-l2: pop     cx, bx, ax, bp
+l2: pop     dx, cx, bx, ax, bp
     ret
 
 draw_caret:
@@ -494,8 +693,8 @@ show:
     ret
 l0: flip
     wait_novblank
-    update_input    input_events
-    fire_bindings   input_bindings
+    ;update_input    input_events
+    ;fire_bindings   input_bindings
     cs inc  fps
     cs mov  draw_flag, 1
     ret
@@ -538,7 +737,6 @@ init:
 
     timer   offset fps_timer, 60
     timer   offset caret_timer, 25
-    cs mov  caret_pos, 42 by 10
 
     ret
 
