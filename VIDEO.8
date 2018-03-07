@@ -121,7 +121,10 @@ _string:
     mov     si, str_ptr
     xor     cx, cx
     cs mov  cl, b[si]
-    inc     si
+    cmp     cl, 0
+    jnz     >c3
+    ret
+c3: inc     si
     mov     bh, str_y
     mov     bl, str_x
     mov     dl, str_pal

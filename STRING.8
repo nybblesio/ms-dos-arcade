@@ -17,6 +17,11 @@ strdefq macro
     db      #s1, '#1'
 #em
 
+strresv macro
+    db      #1
+    db      #1 dup(020h)
+#em
+
 put_dec2:
     push    es, ax
     mov     es, cs

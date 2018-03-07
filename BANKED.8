@@ -43,9 +43,11 @@ STATE_SPR_BANK  equ 5
 STATE_TILE_BANK equ 6
 STATE_PAL_BANK  equ 7
 STATE_BG_BANK   equ 8
+STATE_MSGBOX    equ 9
 
 F_BTN_NONE      equ 0000_0000_0000_0000xb
-F_BTN_ENABLED   equ 0000_0000_0000_0001xb
+F_BTN_VISIBLE   equ 0000_0000_0000_0001xb
+F_BTN_ENABLED   equ 0000_0000_0000_0010xb
 F_BTN_END       equ 1000_0000_0000_0000xb
 
 F_TXT_NONE      equ 0000_0000xb
@@ -110,6 +112,13 @@ buttondef macro
     dw #1, #2, #3, #4, #5, #6
 #em
 
+btn_set macro
+    push    bp
+    mov     bp, #1
+    mov     btn_flags, #2
+    pop     bp
+#em
+
 even
 
 exit_code           db      ?
@@ -118,8 +127,9 @@ fps                 db      ?
 caret_vis           db      ?
 caret_pos           dw      ?
 caret_enabled       db      0
+msgbox_enabled      db      0
 draw_flag           db      ?
-mouse_data          dw      2 dup (?)
+mouse_data:         dw      2 dup (?)
 
 frame_rate:
     strdef  '00'
@@ -148,6 +158,12 @@ exit_label:
 add_label:
     strdef  'ADD'
 
+ok_label:
+    strdef  'OK'
+
+cancel_label:
+    strdef  'CANCEL'
+
 remove_label:
     strdef  'REMOVE'
 
@@ -166,28 +182,39 @@ tool_author:
 tool_copyright:
     strdef  '(C) 2017 NYBBLES.IO'
 
+msgbox_title:
+    strdef  'BANKED SAYS'
+
 buttons:
 btn_new:
-    buttondef F_BTN_ENABLED, new_label,    8 by 23,  0 by 20,  38 by 10, btn_new_cb
+    buttondef F_BTN_ENABLED or F_BTN_VISIBLE, new_label, 8 by 23, 0 by 20, 38 by 10, btn_new_cb
 
 btn_load:
-    buttondef F_BTN_ENABLED, load_label,   7 by 35,  0 by 32,  38 by 10, btn_load_cb
+    buttondef F_BTN_ENABLED or F_BTN_VISIBLE, load_label, 7 by 35, 0 by 32, 38 by 10, btn_load_cb
 
 btn_save:
-    buttondef F_BTN_NONE,    save_label,   7 by 47,  0 by 44,  38 by 10, btn_save_cb
+    buttondef F_BTN_VISIBLE, save_label, 7 by 47, 0 by 44, 38 by 10, btn_save_cb
 
 btn_exit:
-    buttondef F_BTN_ENABLED, exit_label,   7 by 59,  0 by 56,  38 by 10, btn_exit_cb
+    buttondef F_BTN_ENABLED or F_BTN_VISIBLE, exit_label, 7 by 59, 0 by 56, 38 by 10, btn_exit_cb
 
 btn_add:
-    buttondef F_BTN_NONE,    add_label,   10 by 203, 0 by 200, 38 by 10, btn_add_bank_cb
+    buttondef F_BTN_VISIBLE, add_label, 10 by 203, 0 by 200, 38 by 10, btn_add_bank_cb
 
 btn_remove:
-    buttondef F_BTN_NONE,    remove_label, 2 by 215, 0 by 212, 38 by 10, btn_remove_bank_cb
+    buttondef F_BTN_VISIBLE, remove_label, 2 by 215, 0 by 212, 38 by 10, btn_remove_bank_cb
 
 btn_clear:
-    buttondef F_BTN_NONE,    clear_label,  5 by 227, 0 by 224, 38 by 10, btn_clear_bank_cb
-    buttondef F_BTN_END,     0,            0,        0,        0
+    buttondef F_BTN_VISIBLE, clear_label, 5 by 227, 0 by 224, 38 by 10, btn_clear_bank_cb
+
+btn_ok:
+    buttondef F_BTN_NONE, ok_label, 220 by 108, 205 by 105, 38 by 10, btn_ok_cb
+
+btn_cancel:
+    buttondef F_BTN_NONE, cancel_label, 167 by 108, 165 by 105, 38 by 10, btn_cancel_cb
+
+    buttondef F_BTN_END, 0, 0, 0, 0
+
 
 input_events:
 quit_key_evt:
@@ -297,15 +324,21 @@ tile_bank_state:
 spr_bank_state:
     state_def   STATE_SPR_BANK, spr_bank_cb
 
+msgbox_state:
+    state_def   STATE_MSGBOX, msgbox_cb
+
 st_stack_top:
     dw 16 dup(?)
+st_stack_bot:
 
-st_stack_ptr    dw  offset st_stack_top + 32
+st_stack_ptr    dw  offset st_stack_bot
 
 st_push macro
+    push    bx
     sub     st_stack_ptr, 2
     mov     bx, st_stack_ptr
     mov     w[bx], #1
+    pop     bx
 #em
 
 st_pop macro
@@ -313,12 +346,27 @@ st_pop macro
 #em
 
 st_top macro
+    push    bx
     mov     bx, st_stack_ptr
     mov     bp, w[bx]
+    pop     bx
 #em
 
+msgbox_lines:
+msgbox_line0:   strresv 32
+msgbox_line1:   strresv 32
+msgbox_line2:   strresv 32
+msgbox_line3:   strresv 32
+msgbox_line4:   strresv 32
+msgbox_line5:   strresv 32
+msgbox_line6:   strresv 32
+msgbox_line7:   strresv 32
+msgbox_line8:   strresv 32
+msgbox_line9:   strresv 32
+                db     0feh
+
 temp_fname:
-    strdef      '            '
+    strresv     12
 
 bank_fname:
     filename    '            '
@@ -330,22 +378,49 @@ bank_fname:
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+msgbox_show:
+    st_push msgbox_state
+    mov     b msgbox_enabled, 1
+    btn_set btn_ok, F_BTN_ENABLED or F_BTN_VISIBLE
+    btn_set btn_cancel, F_BTN_ENABLED or F_BTN_VISIBLE
+    ret
+
+msgbox_cb:
+    ;call    buttons_fire
+    next_key
+    cmp     al, K_ESC
+    jne     >l0
+    mov     b msgbox_enabled, 0
+    btn_set btn_ok, F_BTN_NONE
+    btn_set btn_cancel, F_BTN_NONE
+    st_pop
+l0: mov     al, 1
+    ret
+
 no_file_cb:
-    call    fire_buttons
+    call    buttons_fire
+    mov     al, 0
     ret
 
 new_file_cb:
-    call    update_text_fields
+    call    txtflds_update
     mov     al, 1
     ret
 
 load_file_cb:
-    call    update_text_fields
+    call    txtflds_update
     mov     al, 1
     ret
 
 bank_fname_cb:
-    push    bp
+    cmp     al, 0
+    je      >l1
+
+    ; filename can't be empty
+    ; enforce .bnk extension
+
+
+l1: push    bp
     st_top
     cmp     st_code, STATE_NEW_FILE
     jne     >l0
@@ -528,7 +603,7 @@ l1: add     bp, type valid_key
 l2: pop     bp
 l3: ret
 
-update_text_fields:
+txtflds_update:
     call    find_key_field
     cmp     bp, 0
     jnz     >l0
@@ -584,6 +659,22 @@ j0: call    text_field_end
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_ok_cb:
+    mov     al, 1
+    mov     msgbox_enabled, 0
+    btn_set btn_ok, F_BTN_NONE
+    btn_set btn_cancel, F_BTN_NONE
+    st_pop
+    ret
+
+btn_cancel_cb:
+    mov     al, 0
+    mov     msgbox_enabled, 0
+    btn_set btn_ok, F_BTN_NONE
+    btn_set btn_cancel, F_BTN_NONE
+    st_pop
+    ret
+
 btn_new_cb:
     st_push new_file_state
     mov     bp, bank_file_field
@@ -594,6 +685,7 @@ btn_new_cb:
     ret
 
 btn_load_cb:
+    call    msgbox_show
     ret
 
 btn_save_cb:
@@ -611,7 +703,7 @@ btn_clear_bank_cb:
 btn_exit_cb:
     jmp     exit_cb
 
-fire_buttons:
+buttons_fire:
     cs mov  bp, mouse_data
     cs mov  bx, ms_pos
     cs mov  ax, ms_btn
@@ -640,6 +732,7 @@ l3: cs mov  ax, btn_pos
     cmp     btn_func, 0
     jz      >l4
     cs call [btn_func]
+    ret
 l4: add     bp, type button
     jmp     l1
     ret
@@ -672,7 +765,30 @@ caret_timer:
 ;³                                                   ³
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-draw_text_fields:
+msgbox_draw:
+    cmp     msgbox_enabled, 1
+    je      >l0
+    ret
+l0: frect   50 by 33, 196 by 85, 8 by 0
+    rect    50 by 33, 196 by 85, 0 by 0
+    frect   52 by 35, 193 by 7,  9 by 0
+    string  offset micro_font, msgbox_title, 110 by 36, 7 by 0, 1
+    xor     bx, bx
+    xor     cx, cx
+    mov     bh, 53
+    mov     bl, 44
+    mov     bp, msgbox_lines
+l1: mov     cl, b[bp]
+    cmp     cl, 0feh
+    jne     >l3
+    ret
+l3: string  offset micro_font, bp, bx, 7 by 0, 1
+    add     bl, 6
+    inc     bp
+    add     bp, cx
+    jmp     l1
+
+txtflds_draw:
     push    bp, ax, bx, cx, dx
     mov     caret_enabled, 0
     mov     bp, text_fields
@@ -704,7 +820,7 @@ l3: add     bp, type text_field
 l2: pop     dx, cx, bx, ax, bp
     ret
 
-draw_caret:
+caret_draw:
     cs cmp  caret_enabled, 1
     jnz     >l0
     cs mov  al, caret_vis
@@ -714,7 +830,7 @@ draw_caret:
     frect   ax, 5 by 5, 7 by 0
 l0: ret
 
-draw_base:
+base_draw:
     frect   0 by 0, 38 by 256, 8 by 0
     vline   38 by 0, 256, 0 by 0
 
@@ -733,15 +849,8 @@ draw_base:
     string  offset micro_font, banks_label, 4 by 191, 7 by 0, 1
     ret
 
-draw_buttons:
-    cs mov  bp, buttons
-l0: cs mov  ax, btn_flags
-    test    ax, F_BTN_END
-    jz      >l1
-    ret
-l1: test    ax, F_BTN_ENABLED
-    jz      >l3
-l2: cs mov  ax, btn_pos
+button_draw:
+    cs mov  ax, btn_pos
     cs mov  cx, btn_size
     xor     bx, bx
     mov     bl, ch
@@ -749,10 +858,28 @@ l2: cs mov  ax, btn_pos
     hline   ax, bx, 0 by 0
     cs mov  si, btn_txt
     cs mov  dx, btn_txt_pos
+    push    ax
+    cs mov  ax, btn_flags
+    test    ax, F_BTN_ENABLED
+    jz      >l0
     string  offset micro_font, si, dx, 7 by 0, 1
+    jmp     >l1
+l0: string  offset micro_font, si, dx, 8 by 0, 1
+l1: pop     ax
     add     al, cl
     hline   ax, bx, 0 by 0
-l3: add     bp, type button
+    ret
+
+buttons_draw:
+    cs mov  bp, buttons
+l0: cs mov  ax, btn_flags
+    test    ax, F_BTN_END
+    jz      >l1
+    ret
+l1: test    ax, F_BTN_VISIBLE
+    jz      >l2
+    call    button_draw
+l2: add     bp, type button
     jmp     l0
     ret
 
@@ -763,16 +890,18 @@ draw:
 
 l0: cs mov  draw_flag, 0
     clear
-    call    draw_base
-    call    draw_text_fields
-    call    draw_caret
-    call    draw_buttons
+    call    base_draw
+    call    txtflds_draw
+    call    caret_draw
+    call    msgbox_draw
+    call    buttons_draw
 
 l5:
 #if DEBUG
     string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
 #endif
     mdraw   mouse_data, cursor_pointer2
+
     ret
 
 show:

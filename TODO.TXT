@@ -17,7 +17,7 @@
 บ TASKS                                                                   บ
 ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
 
-- error pop-up window but OK/EXIT button
+- macro/function to set length/content of strdef/strresv
 
 - pick bank type UI: radio button list
 
@@ -48,3 +48,4 @@
 - size bank viewer window at bottom to show one block worth of data
 - text field processing functions
 - state stack
+- error pop-up window but OK/EXIT button
