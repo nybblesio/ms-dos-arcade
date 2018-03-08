@@ -10,13 +10,8 @@
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё bank structures & variables                       Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё constants                                         Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
-
 F_BANK_BLOCK_NONE   equ 0000_0000_0000_0000xb
 F_BANK_BLOCK_DEL    equ 0000_0000_0000_0001xb
 F_BANK_BLOCK_DIRTY  equ 0000_0000_0000_0010xb
@@ -26,6 +21,10 @@ BANK_TYPE_TILE      equ 2
 BANK_TYPE_BG        equ 3
 BANK_TYPE_FONT      equ 4
 
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё structures                                        Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 bank_header struc [bp]
     hdr_magick      dw  ?
     hdr_block_sz    dw  ?
@@ -60,6 +59,9 @@ SZ_BANK_HDRS_PARA   equ SZ_BANK_HDRS / 16
 SZ_BANK_BLK         equ type bank_block * 16
 SZ_BANK_BLK_PARA    equ SZ_BANK_BLK / 16
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё variables                                         Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 even
 
 bank_hdr_id         db  1
@@ -71,11 +73,7 @@ bank_file_header:
     dw  type bank_block
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё bank functions and macros                         Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё bk_init                                           Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 bk_init:
     alloc   SZ_BANK_HDRS_PARA, offset bank_hdrs_seg
@@ -83,6 +81,9 @@ bk_init:
     mov     bank_hdrs_off, 0
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _bank_find                                        Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _bank_find:
     mov     bp, sp
     cs mov  es, bank_hdrs_seg
@@ -105,6 +106,9 @@ bank_find macro
     pop     cx, es, bp
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _bank_new                                         Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _bank_new:
     mov     bp, sp
     mov     bx, [bp]
@@ -131,6 +135,9 @@ bank_new macro
     pop     bx, cx, bp
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _bank_file_create                                 Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _bank_file_create:
     mov     bp, sp
     mov     ax, [bp]
@@ -150,6 +157,9 @@ bank_file_create macro
     pop     bp
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _bank_file_save                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 ; use in banked
 _bank_file_save:
     ; 1. create temp file via _bank_file_create
@@ -169,6 +179,9 @@ _bank_file_load:
     ; 3. close file
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _bank_file_load_data                              Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 ; use from game engine
 ; params:
 ;

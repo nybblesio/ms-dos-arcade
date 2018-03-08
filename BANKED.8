@@ -46,6 +46,11 @@ STATE_PAL_BANK  equ 7
 STATE_BG_BANK   equ 8
 STATE_MSGBOX    equ 9
 
+TAB_BAR_X equ 38
+TAB_BAR_Y equ 160
+TAB_BAR_H equ 10
+TAB_BAR_B equ TAB_BAR_Y + TAB_BAR_H
+
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ structures & variables                            ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
@@ -94,6 +99,15 @@ remove_label:
 clear_label:
     strdef  'CLEAR'
 
+props_label:
+    strdef  'PROPS'
+
+pal_label:
+    strdef  'PAL'
+
+tileset_label:
+    strdef  'TILES'
+
 tool_title:
     strdef  'BANKED'
 
@@ -109,35 +123,71 @@ tool_copyright:
 msgbox_title:
     strdef  'BANKED SAYS'
 
+test_label:
+    strdef  '00:TILE'
+
+block_label:
+    strdef  'BLOCK #'
+
+block_number:
+    strdef  '00'
+
+of_label:
+    strdef  'OF'
+
+block_total_number:
+    strdef  '00'
+
+up_arrow_char:
+    str_defc 24
+
+down_arrow_char:
+    str_defc 25
+
+right_arrow_char:
+    str_defc 26
+
+left_arrow_char:
+    str_defc 27
+
 buttons:
 btn_new:
-    btn_def F_BTN_ENABLED or F_BTN_VISIBLE, new_label, 8 by 23, 0 by 20, 38 by 10, btn_new_cb
+    bt_def F_BTN_ENABLED or F_BTN_VISIBLE, new_label, 8 by 22, 0 by 20, 38 by 8, btn_new_cb
 
 btn_load:
-    btn_def F_BTN_ENABLED or F_BTN_VISIBLE, load_label, 7 by 35, 0 by 32, 38 by 10, btn_load_cb
+    bt_def F_BTN_ENABLED or F_BTN_VISIBLE, load_label, 7 by 32, 0 by 30, 38 by 8, btn_load_cb
 
 btn_save:
-    btn_def F_BTN_VISIBLE, save_label, 7 by 47, 0 by 44, 38 by 10, btn_save_cb
+    bt_def F_BTN_VISIBLE, save_label, 7 by 42, 0 by 40, 38 by 8, btn_save_cb
 
 btn_exit:
-    btn_def F_BTN_ENABLED or F_BTN_VISIBLE, exit_label, 7 by 59, 0 by 56, 38 by 10, btn_exit_cb
+    bt_def F_BTN_ENABLED or F_BTN_VISIBLE, exit_label, 7 by 52, 0 by 50, 38 by 8, btn_exit_cb
 
 btn_add:
-    btn_def F_BTN_VISIBLE, add_label, 10 by 203, 0 by 200, 38 by 10, btn_add_bank_cb
+    bt_def F_BTN_VISIBLE, add_label, 10 by TAB_BAR_B + 6, 0 by TAB_BAR_B + 4, 38 by 8, btn_add_bank_cb
 
 btn_remove:
-    btn_def F_BTN_VISIBLE, remove_label, 2 by 215, 0 by 212, 38 by 10, btn_remove_bank_cb
+    bt_def F_BTN_VISIBLE, remove_label, 2 by TAB_BAR_B + 16, 0 by TAB_BAR_B + 14, 38 by 8, btn_remove_bank_cb
 
 btn_clear:
-    btn_def F_BTN_VISIBLE, clear_label, 5 by 227, 0 by 224, 38 by 10, btn_clear_bank_cb
+    bt_def F_BTN_VISIBLE, clear_label, 5 by TAB_BAR_B + 26, 0 by TAB_BAR_B + 24, 38 by 8, btn_clear_bank_cb
+
+btn_props:
+    bt_def F_BTN_VISIBLE, props_label, 5 by TAB_BAR_B + 36, 0 by TAB_BAR_B + 34, 38 by 8, btn_props_bank_cb
+
+btn_pal:
+    bt_def F_BTN_VISIBLE, pal_label, 10 by TAB_BAR_B + 52, 0 by TAB_BAR_B + 50, 38 by 8, btn_pal_cb
+
+btn_tileset:
+    bt_def F_BTN_VISIBLE, tileset_label, 4 by TAB_BAR_B + 62, 0 by TAB_BAR_B + 60, 38 by 8, btn_tileset_cb
 
 btn_ok:
-    btn_def F_BTN_NONE, ok_label, 220 by 108, 205 by 105, 38 by 10, btn_ok_cb
+    bt_def F_BTN_NONE, ok_label, 220 by 107, 205 by 105, 38 by 8, btn_ok_cb
 
 btn_cancel:
-    btn_def F_BTN_NONE, cancel_label, 167 by 108, 165 by 105, 38 by 10, btn_cancel_cb
+    bt_def F_BTN_NONE, cancel_label, 167 by 107, 165 by 105, 38 by 8, btn_cancel_cb
 
-    btn_def F_BTN_END, 0, 0, 0, 0
+    bt_def F_BTN_END, 0, 0, 0, 0
 
 valid_fname_keys:
     vk_def   002h,    0,  '1'
@@ -437,6 +487,24 @@ btn_clear_bank_cb:
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_props_bank_cb                                 ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_props_bank_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_pal_cb                                        ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_pal_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_tileset_cb                                    ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_tileset_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_exit_cb                                       ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_exit_cb:
@@ -455,25 +523,135 @@ fps_timer:
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _tab_draw                                         ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+; 27 ->  28 <-
+_tab_draw:
+    mov     bp, sp
+    mov     bx, [bp + 2]
+    inc     bh
+    frect   bx, 45 by 9, 9 by 0
+    hline   bx, 45, 0 by 0
+    dec     bh
+    inc     bl
+    vline   bx, 9, 0 by 0
+    add     bh, 2
+    add     bl, 2
+    string  micro_font, test_label, bx, 7 by 0, 1
+    add     bh, 44
+    sub     bl, 2
+    vline   bx, 9, 0 by 0
+    ret
+
+tb_draw macro
+    push    bp, ax, bx, cx, dx
+    push    #1
+    call    _tab_draw
+    add     sp, 2
+    pop     dx, cx, bx, ax, bp
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ base_draw                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 base_draw:
     frect   0 by 0, 38 by 256, 8 by 0
     vline   38 by 0, 256, 0 by 0
 
-    string  offset micro_font, file_label,   42 by 2, 7 by 0, 1
-    string  offset micro_font, editor_label,206 by 2, 7 by 0, 1
+    string  micro_font, file_label,   42 by 2, 7 by 0, 1
+    string  micro_font, editor_label,206 by 2, 7 by 0, 1
 
-    string  offset micro_font, tool_title,  1 by 2, 0 by 0, 1
-    string  offset micro_font, tool_title,  2 by 3, 7 by 0, 1
+    string  micro_font, tool_title,  1 by 2, 0 by 0, 1
+    string  micro_font, tool_title,  2 by 3, 7 by 0, 1
 
-    string  offset micro_font, tool_version, 16 by 8, 0 by 0, 0
-    string  offset micro_font, tool_version, 17 by 9, 7 by 0, 0
+    string  micro_font, tool_version, 16 by 8, 0 by 0, 0
+    string  micro_font, tool_version, 17 by 9, 7 by 0, 0
 
-    hline   38 by 189, 218,     0 by 0
-    frect   38 by 190, 218 by 9,8 by 0
-    hline   38 by 198, 218,     0 by 0
-    string  offset micro_font, banks_label, 4 by 191, 7 by 0, 1
+    hline   TAB_BAR_X by TAB_BAR_Y - 1, 218, 0 by 0
+    frect   TAB_BAR_X by TAB_BAR_Y, 218 by TAB_BAR_H,8 by 0
+    hline   TAB_BAR_X by TAB_BAR_B, 218, 0 by 0
+    string  micro_font, banks_label, 2 by TAB_BAR_Y + 3, 7 by 0, 1
+
+    mov     cx, 4
+    mov     bh, TAB_BAR_X + 10
+    mov     bl, TAB_BAR_Y + 1
+l0: tb_draw bx
+    add     bh, 50
+    loop    l0
+
+    string  micro_font, left_arrow_char, TAB_BAR_X + 2 by TAB_BAR_Y + 3, 7 by 0, 1
+    string  micro_font, right_arrow_char, 248 by TAB_BAR_Y + 3, 7 by 0, 1
+    string  micro_font, up_arrow_char, 248 by TAB_BAR_Y + 14, 7 by 0, 1
+    string  micro_font, down_arrow_char, 248 by 248, 7 by 0, 1
+
+    string  micro_font, block_label, TAB_BAR_X + 4 by TAB_BAR_Y + 14, 7 by 0, 1
+    string  micro_font, block_number, TAB_BAR_X + 48 by TAB_BAR_Y + 14, 7 by 0, 1
+    string  micro_font, of_label, TAB_BAR_X + 66 by TAB_BAR_Y + 14, 7 by 0, 1
+    string  micro_font, block_total_number, TAB_BAR_X + 84 by TAB_BAR_Y + 14, 7 by 0, 1
+
+    frect   43 by 20, 128 by 128, 8 by 0
+    rect    42 by 20, 128 by 128, 0 by 0
+
+;#if TILES
+    ; tile selection grid example
+    mov     dx, 6
+    mov     bh, TAB_BAR_X + 4
+    mov     bl, TAB_BAR_Y + 26
+l2: mov     cx, 22
+l1: frect   bx, 8 by 8, 4 by 0
+    add     bh, 9
+    loop    l1
+    dec     dx
+    add     bl, 9
+    mov     bh, TAB_BAR_X + 4
+    cmp     dx, 0
+    jnz     l2
+
+    ; drawing surface example
+    mov     dx, 8
+    mov     bh, 43
+    mov     bl, 21
+l4: mov     cx, 8
+l3: frect   bx, 15 by 15, 3 by 0
+    add     bh, 16
+    loop    l3
+    add     bl, 16
+    mov     bh, 43
+    dec     dx
+    cmp     dx, 0
+    jnz     l4
+;#endif
+
+#if SPRS
+    ; sprite selection grid example
+    mov     dx, 3
+    mov     bh, TAB_BAR_X + 4
+    mov     bl, TAB_BAR_Y + 28
+l2: mov     cx, 12
+l1: frect   bx, 16 by 16, 4 by 0
+    add     bh, 17
+    loop    l1
+    dec     dx
+    add     bl, 17
+    mov     bh, TAB_BAR_X + 4
+    cmp     dx, 0
+    jnz     l2
+
+    ; drawing surface example
+    mov     dx, 16
+    mov     bh, 43
+    mov     bl, 21
+l4: mov     cx, 16
+l3: frect   bx, 7 by 7, 3 by 0
+    add     bh, 8
+    loop    l3
+    add     bl, 8
+    mov     bh, 43
+    dec     dx
+    cmp     dx, 0
+    jnz     l4
+#endif
+
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -488,13 +666,13 @@ l0: mov     draw_flag, 0
     clear
     call    base_draw
     tf_draw text_fields
-    call    cu_draw
-    call    msgbox_draw
+    cu_draw
+    mb_draw
     bt_draw buttons
 
 l5:
 #if DEBUG
-    string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
+    string  micro_font, frame_rate, 2 by 250, 0 by 0, 1
 #endif
     mo_draw mouse_data, cursor_pointer2
 

@@ -10,32 +10,27 @@
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё file structures & variables                       Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё structures                                        Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 filename macro
     strdef #1
     db     0
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё variables                                         Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 ; XXX: create table of error messages related
 ;      to filesystem
 ;
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё file functions and macros                         Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё _file_rename                                      Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _file_rename:
     mov     bp, sp
-    mov     dx, [bp + 2]
-    mov     di, [bp]
+    mov     dx, [bp + 4]
+    mov     di, [bp + 2]
     mov     ah, 056h
     mov     al, 0
     int     21h
@@ -48,9 +43,12 @@ file_rename macro
     pop     di, dx, bp
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _file_delete                                      Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _file_delete:
     mov     bp, sp
-    mov     dx, [bp]
+    mov     dx, [bp + 2]
     mov     ah, 041h
     mov     al, 0
     int     21h
@@ -63,9 +61,12 @@ file_delete macro
     pop     dx, bp
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _file_create                                      Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _file_create:
     mov     bp, sp
-    mov     dx, [bp]
+    mov     dx, [bp + 2]
     mov     ah, 03ch
     mov     al, 0
     xor     cx, cx
@@ -79,11 +80,14 @@ file_create macro
     pop     cx, dx, bp
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _file_read                                        Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _file_read:
     mov     bp, sp
-    mov     bx, [bp + 4]
-    mov     dx, [bp + 2]
-    mov     cx, [bp]
+    mov     bx, [bp + 6]
+    mov     dx, [bp + 4]
+    mov     cx, [bp + 2]
     mov     ah, 03fh
     mov     al, 0
     int     21h
@@ -96,11 +100,14 @@ file_read macro
     pop     dx, cx, bx, bp
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _file_write                                       Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _file_write:
     mov     bp, sp
-    mov     bx, [bp + 4]
-    mov     dx, [bp + 2]
-    mov     cx, [bp]
+    mov     bx, [bp + 6]
+    mov     dx, [bp + 4]
+    mov     cx, [bp + 2]
     mov     ah, 040h
     mov     al, 0
     int     21h
@@ -113,11 +120,14 @@ file_write macro
     pop     dx, cx, bx, bp
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _file_seek                                        Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _file_seek:
     mov     bp, sp
     xor     cx, cx
-    mov     dx, [bp]
-    mov     bx, [bp + 2]
+    mov     dx, [bp + 2]
+    mov     bx, [bp + 4]
     mov     ah, 042h
     mov     al, 1
     int     21h
@@ -130,9 +140,12 @@ file_seek macro
     pop     dx, cx, bx, bp
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _file_open                                        Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _file_open:
     mov     bp, sp
-    mov     dx, [bp]
+    mov     dx, [bp + 2]
     mov     ah, 03dh
     mov     al, 2
     int     21h
@@ -145,9 +158,12 @@ file_open macro
     pop     dx, bp
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _file_close                                       Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _file_close:
     mov     bp, sp
-    mov     bx, [bp]
+    mov     bx, [bp + 2]
     mov     ah, 03eh
     mov     al, 0
     int     21h

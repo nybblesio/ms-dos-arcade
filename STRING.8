@@ -9,12 +9,16 @@
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
+str_defc macro
+    db  1, #1
+#em
+
 strdef macro
-    db      #s1 - 2, #1
+    db  #s1 - 2, #1
 #em
 
 strdefq macro
-    db      #s1, '#1'
+    db  #s1, '#1'
 #em
 
 strresv macro

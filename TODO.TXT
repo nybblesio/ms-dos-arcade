@@ -11,11 +11,44 @@
 ษอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
 บ NOTES                                                                   บ
 ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
+- if deleteing bank, save to temporary file, reset state, reload to
+  compress memory utilization
 
+- bank types
+    sprites: 16x16 pixels, nybble encoded so 128 bytes
+        * 16 blocks
+    tiles:    8x 8 pixels, nybble encoded so 32 bytes
+        * 16 blocks
+    bg:      32x32 tiles * 4 bytes per tile struc + some overhead
+        * 2 blocks (not full, lots of extra space)
+    pal:       255 entries * 3 bytes
+        * 1 block  (not full, lots of extra space)
+    font:     5x 5 255 glyphs * 25 bytes
+        * 2 blocks (not full, lots of extra space)
 
 ษอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
 บ TASKS                                                                   บ
 ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
+
+- change bank interface to allow specifying max number of blocks when
+  creating new bank
+
+- store number of max blocks somewhere in bank header
+
+- keyboard interface for block scrolling
+
+- keyboard interface for bank selection/scrolling
+
+- keyboard interface for sprite/tile/font editor
+
+- create new structure for grid-based mouse selection
+    - if mouse is within bounds, pick proper row/column based on config
+    - click detection
+
+- extend button structure to support:
+    - background & border color
+    - flag for render just the text
+    - flag for no rendering, e.g. for use with tabs
 
 - macro/function to set length/content of strdef/strresv
 

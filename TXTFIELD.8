@@ -9,11 +9,17 @@
 ;³                                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ constants                                         ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 F_TXT_NONE      equ 0000_0000xb
 F_TXT_READONLY  equ 0000_0001xb
 F_TXT_EDIT      equ 0000_0010xb
 F_TXT_END       equ 1000_0000xb
 
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ structures                                        ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 valid_key struc [bp]
     vk_code     db ?
     vk_mod_code db ?
@@ -53,7 +59,7 @@ l0: mov     al, txt_flags
 l1: mov     bp, 0
     ret
 
-txt_find_key macro
+tf_find macro
     mov     bp, #1
     call    _txt_find_key
 #em
@@ -299,7 +305,7 @@ l0: xor     ax, ax
     mov     cx, 7 by 0
 l1: mov     ax, txt_pos
     mov     bx, txt_buffer
-    string  offset micro_font, bx, ax, cx, 1
+    string  micro_font, bx, ax, cx, 1
     cmp     ch, 7
     jne     >l3
     mov     bx, ax
