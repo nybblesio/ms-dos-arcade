@@ -26,6 +26,9 @@
     font:     5x 5 255 glyphs * 25 bytes
         * 2 blocks (not full, lots of extra space)
 
+- add control to show/hide bank viewer, e.g. especially for background layout
+  editing for more room.
+
 ษอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
 บ TASKS                                                                   บ
 ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
