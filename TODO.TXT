@@ -69,8 +69,6 @@
           : wire up LOAD
           : wire up SAVE
           : wire up new BANK
-          : why lodsb/stosb not working?
-
 
 - number fields: left/right buttons for increment/decrement
 
@@ -85,3 +83,6 @@
 - text field processing functions
 - state stack
 - error pop-up window but OK/EXIT button
+- why lodsb/stosb not working?
+    - lodsb uses DS and stosb uses ES, not DS
+    - movsb is what I wanted to use

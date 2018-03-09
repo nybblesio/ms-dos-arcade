@@ -10,11 +10,7 @@
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё control ram structures and variables              Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё constants                                         Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 
 F_SPR_ENABLED   equ 00000001xb
@@ -25,6 +21,9 @@ F_TIMER_ENABLED equ 00000001xb
 F_TIMER_EXPIRED equ 00000010xb
 F_TIMER_READY   equ 00000100xb
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё structures                                        Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 timer struc [bp]
     tm_callback dw ?
     tm_frames   dw ?
@@ -65,9 +64,6 @@ ctrl struc [bp]
     c_timers    db ((type timer) * 32) dup ?
 ends
 
-ctrl_ram_ptr    dw ?
-back_buffer_ptr dw ?
-
 font struc [bp]
     f_segment   dw ?
     f_offset    dw ?
@@ -77,18 +73,16 @@ font struc [bp]
     f_temp2     db ?
 ends
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё variables                                         Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+ctrl_ram_ptr    dw ?
+back_buffer_ptr dw ?
+
 small_font:     db (type font) dup ?
 large_font:     db (type font) dup ?
 micro_font:     db (type font) dup ?
 
-;
-;
-;
-
 SZ_CTRL_RAM     equ 04000h
 SZ_TILE_BANK    equ 0ffffh
 SZ_SPRS_TABLE   equ ((type sprite) * 256)
-
-;
-;
-;

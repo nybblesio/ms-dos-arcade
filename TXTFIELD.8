@@ -183,14 +183,12 @@ txt_delete:
     dec     bp
     mov     di, bp
     sub     cl, bl
+    push    es
+    mov     es, cs
     cld
-l0: mov     al, b[si]
-    mov     b[di], al
-    inc     si
-    inc     di
-    ;lodsb
-    ;stosb
+l0: movsb
     loop    l0
+    pop     es
     pop     bp
     push    bp
     mov     bp, txt_buffer
@@ -305,7 +303,7 @@ l0: xor     ax, ax
     mov     cx, 7 by 0
 l1: mov     ax, txt_pos
     mov     bx, txt_buffer
-    string  micro_font, bx, ax, cx, 1
+    vg_str  micro_font, bx, ax, cx, 1
     cmp     ch, 7
     jne     >l3
     mov     bx, ax

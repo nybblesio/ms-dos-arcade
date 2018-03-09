@@ -41,7 +41,7 @@ _cu_draw:
     cmp     al, 0
     jz      >l0
     mov     ax, cu_pos
-    frect   ax, 5 by 5, 7 by 0
+    vg_fbox ax, 5 by 5, 7 by 0
 l0: ret
 
 cu_draw macro

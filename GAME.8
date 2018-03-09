@@ -27,11 +27,7 @@ include video.8
 include sound.8
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ game structures & variables                       ³
-;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
+;³ variables                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 even
 
@@ -41,207 +37,212 @@ exit_code           db      ?
 temp_ptr            dw      ?
 draw_flag           db      ?
 
-frame_rate:         strdef  '00'
-game_title:         strdef  'LUMBERJACKS'
-game_copyright:     strdef  '(C) 2017 NYBBLES.IO'
+frame_rate:         s$_def  '00'
+game_title:         s$_def  'LUMBERJACKS'
+game_copyright:     s$_def  '(C) 2017 NYBBLES.IO'
 
 input_events:
-quit_key_evt:       def_inp_evt     T_INPUT_KEY, K_ESC
+quit_key_evt:       in_evt  T_INPUT_KEY, K_ESC
 
-p1_left_key_evt:    def_inp_evt     T_INPUT_KEY, K_LEFT
-p1_left_joy_evt:    def_inp_evt     T_INPUT_JOY, 1
+p1_left_key_evt:    in_evt  T_INPUT_KEY, K_LEFT
+p1_left_joy_evt:    in_evt  T_INPUT_JOY, 1
 
-p1_right_key_evt:   def_inp_evt     T_INPUT_KEY, K_RIGHT
-p1_right_joy_evt:   def_inp_evt     T_INPUT_JOY, 1
+p1_right_key_evt:   in_evt  T_INPUT_KEY, K_RIGHT
+p1_right_joy_evt:   in_evt  T_INPUT_JOY, 1
 
-p1_up_key_evt:      def_inp_evt     T_INPUT_KEY, K_UP
-p1_up_joy_evt:      def_inp_evt     T_INPUT_JOY, 1
+p1_up_key_evt:      in_evt  T_INPUT_KEY, K_UP
+p1_up_joy_evt:      in_evt  T_INPUT_JOY, 1
 
-p1_down_key_evt:    def_inp_evt     T_INPUT_KEY, K_DOWN
-p1_down_joy_evt:    def_inp_evt     T_INPUT_JOY, 1
+p1_down_key_evt:    in_evt  T_INPUT_KEY, K_DOWN
+p1_down_joy_evt:    in_evt  T_INPUT_JOY, 1
 
-                    def_inp_evt     0,           0
+                    in_evt  0,           0
 
 input_bindings:
-quit_bind:          def_inp_bind    B_QUIT,     'QUIT            ', exit,      quit_key_evt,     0,                0, 0
-p1_left_bind:       def_inp_bind    B_P1_LEFT,  'P1 LEFT         ', _p1_left,  p1_left_key_evt,  p1_left_joy_evt,  0, 0
-p1_right_bind:      def_inp_bind    B_P1_RIGHT, 'P1 RIGHT        ', _p1_right, p1_right_key_evt, p1_right_joy_evt, 0, 0
-p1_up_bind:         def_inp_bind    B_P1_UP,    'P1 UP           ', _p1_up,    p1_up_key_evt,    p1_up_joy_evt,    0, 0
-p1_down_bind:       def_inp_bind    B_P1_DOWN,  'P1 DOWN         ', _p1_down,  p1_down_key_evt,  p1_down_joy_evt,  0, 0
+quit_bind:          in_bind B_QUIT,     'QUIT            ', exit,      quit_key_evt,     0,                0, 0
+p1_left_bind:       in_bind B_P1_LEFT,  'P1 LEFT         ', _p1_left,  p1_left_key_evt,  p1_left_joy_evt,  0, 0
+p1_right_bind:      in_bind B_P1_RIGHT, 'P1 RIGHT        ', _p1_right, p1_right_key_evt, p1_right_joy_evt, 0, 0
+p1_up_bind:         in_bind B_P1_UP,    'P1 UP           ', _p1_up,    p1_up_key_evt,    p1_up_joy_evt,    0, 0
+p1_down_bind:       in_bind B_P1_DOWN,  'P1 DOWN         ', _p1_down,  p1_down_key_evt,  p1_down_joy_evt,  0, 0
 
-                    def_inp_bind    0,          '                ', 0,         0,                0,                0, 0
+                    in_bind 0,          '                ', 0,         0,                0,                0, 0
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ main game engine                                  ³
-;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
+;³ _p1_right                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _p1_right:
-    loadspr 0
+    vg_lspr 0
     es add  s_x, 4
     es cmp  s_x, 230
     jb      >l0
     es mov  s_x, 230
 l0: ret
 
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _p1_down                                          ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _p1_down:
-    loadspr 0
+    vg_lspr 0
     es add  s_y, 4
     es cmp  s_y, 230
     jb      >l0
     es mov  s_y, 230
 l0: ret
 
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _p1_left                                          ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _p1_left:
-    loadspr 0
+    vg_lspr 0
     es sub  s_x, 4
     es cmp  s_x, 10
     ja      >l0
     es mov  s_x, 10
 l0: ret
 
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _p1_up                                            ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _p1_up:
-    loadspr 0
+    vg_lspr 0
     es sub  s_y, 4
     es cmp  s_y, 10
     ja      >l0
     es mov  s_y, 10
 l0: ret
 
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _fps_timer                                        ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 fps_timer:
     tm_clr
     mov     di, frame_rate + 1
     xor     ax, ax
     cs mov  al, fps
-    call    put_dec2
+    call    s$_dec2
     cs mov  fps, 0
     ret
 
-;
-; allocate memory
-;
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ allocate                                          ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 allocate:
-    alloc   SZ_CTRL_RAM / 16,  offset ctrl_ram_ptr
-    memset  ctrl_ram_ptr, 0, SZ_CTRL_RAM, 0
+    mm_resv SZ_CTRL_RAM / 16,  offset ctrl_ram_ptr
+    mm_set  ctrl_ram_ptr, 0, SZ_CTRL_RAM, 0
 
     mov     es, ctrl_ram_ptr
     mov     bp, 0
 
-    alloc   SZ_TILE_BANK / 16, offset temp_ptr
-    memset  temp_ptr, 0, SZ_TILE_BANK, 024h
+    mm_resv SZ_TILE_BANK / 16, offset temp_ptr
+    mm_set  temp_ptr, 0, SZ_TILE_BANK, 024h
     es_movm c_bg_tiles, temp_ptr
 
-    alloc   SZ_TILE_BANK / 16, offset temp_ptr
-    memset  temp_ptr,   0, SZ_TILE_BANK, 07fh
-    memset  temp_ptr,   0, 128, 07ah
-    memset  temp_ptr, 128, 128, 08ah
-    memset  temp_ptr, 256, 256, 09ah
-    memset  temp_ptr, 512, 256, 0abh
-    memset  temp_ptr, 768, 256, 0bah
+    mm_resv SZ_TILE_BANK / 16, offset temp_ptr
+    mm_set  temp_ptr,   0, SZ_TILE_BANK, 07fh
+    mm_set  temp_ptr,   0, 128, 07ah
+    mm_set  temp_ptr, 128, 128, 08ah
+    mm_set  temp_ptr, 256, 256, 09ah
+    mm_set  temp_ptr, 512, 256, 0abh
+    mm_set  temp_ptr, 768, 256, 0bah
     es_movm c_spr_tiles, temp_ptr
 
-    alloc   SZ_VRAM / 16, offset back_buffer_ptr
-    memset  back_buffer_ptr, 0, SZ_VRAM, 0
+    mm_resv SZ_VRAM / 16, offset back_buffer_ptr
+    mm_set  back_buffer_ptr, 0, SZ_VRAM, 0
 
     ret
 
-;
-; initialize everything
-;
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ init                                              ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 init:
+    mm_init
     call    allocate
-    mode_13
-    mode_p  modeq_params
+    call    vg_init
     call    io_init
     call    tm_init
-    sound_init
+    sn_init
 
-    loadspr 0
-    setspr  0, 0, 100, 10, F_SPR_ENABLED, 0
+    vg_lspr 0
+    vg_sspr 0, 0, 100, 10, F_SPR_ENABLED, 0
 
     tm_new  offset fps_timer, 60
 
     ret
 
-;
-; render the video scene
-;   bg 1
-;   fg
-;   bg 2
-;   text
-
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ draw_title                                        ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 draw_title:
-    frect   50 by 33, 150 by 85, 8 by 0
-    rect    50 by 33, 150 by 85, 0 by 0
+    vg_fbox 50 by 33, 150 by 85, 8 by 0
+    vg_box  50 by 33, 150 by 85, 0 by 0
 
-    string  offset large_font, game_title, 80 by 45, 1 by 0, 0
-    string  offset large_font, game_title, 81 by 46, 7 by 0, 0
+    vg_str  offset large_font, game_title, 80 by 45, 1 by 0, 0
+    vg_str  offset large_font, game_title, 81 by 46, 7 by 0, 0
 
-    string  offset micro_font, game_title, 90 by 74, 1 by 0, 1
-    string  offset micro_font, game_title, 91 by 75, 7 by 0, 1
+    vg_str  offset micro_font, game_title, 90 by 74, 1 by 0, 1
+    vg_str  offset micro_font, game_title, 91 by 75, 7 by 0, 1
 
-    string  offset micro_font, game_copyright, 62 by 90, 1 by 0, 1
-    string  offset micro_font, game_copyright, 63 by 91, 7 by 0, 1
+    vg_str  offset micro_font, game_copyright, 62 by 90, 1 by 0, 1
+    vg_str  offset micro_font, game_copyright, 63 by 91, 7 by 0, 1
 
     ret
 
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ draw                                              ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 draw:
     cs cmp  draw_flag, 1
     je      >l0
     ret
 l0: cs mov  draw_flag, 0
-    video_bg1
-    video_fg
-    video_bg2
+    vg_bg1
+    vg_fg
+    vg_bg2
     call    draw_title
 #if DEBUG
-    string  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
+    vg_str  offset micro_font, frame_rate, 244 by 251, 0 by 0, 1
 #endif
     ret
 
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ show                                              ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 show:
-    is_vblank
+    sc_isvb
     cmp     al, 0
     jnz     >l0
     ret
-l0: flip
-    wait_novblank
-    update_input    input_events
-    fire_bindings   input_bindings
+l0: vg_flip
+    sc_wnvb
+    in_upd  input_events
+    in_fire input_bindings
     cs inc  fps
     cs mov  draw_flag, 1
     ret
 
-;
-; entry point
-;
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ start                                             ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 start:
     call    init
 
-;
-; the heart
-;
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ game_loop                                         ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 game_loop:
     tm_fire
     cs call draw
     cs call show
     jmp     game_loop
 
-;
-; the end
-;
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ exit                                              ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 exit:
-    sound_shutdown
+    sn_shut
     call    tm_shutdown
     call    io_shutdown
-    mode_03
+    call    vg_shutdown
     mov     ah, 04ch
     mov     al, exit_code
     int     21h

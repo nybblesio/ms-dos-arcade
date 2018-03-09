@@ -9,6 +9,9 @@
 ;Ё                                                   Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё constants                                         Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 CRT_IC      equ 03d4h
 CRT_IM      equ 03b4h
 ATT_IW      equ 03c0h
@@ -33,6 +36,9 @@ VRAM        equ 0a000h
 SZ_VRAM     equ 0ffffh
 VRAM_PITCH  equ 256
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё structures                                        Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 vga_reg_cfg struc [bp]
     vga_reg     dw ?
     vga_func    db ?
@@ -41,6 +47,9 @@ vga_reg_cfg struc [bp]
     vga_pad     db ?
 ends
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё variables                                         Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 even
 
 modeq_params:
@@ -149,20 +158,19 @@ modeq_params:
     db  0,       0,  0, 0
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё screen control macros                             Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё sc_on                                             Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
-scron macro
+sc_on macro
     push    ax, dx
     inp     IS1_RC
     outp    ATT_IW, 020h
     pop     dx, ax
 #em
 
-scroff macro
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё sc_off                                            Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+sc_off macro
     push    ax, dx
     inp     IS1_RC
     outp    ATT_IW, 0
@@ -170,13 +178,9 @@ scroff macro
 #em
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё palettes                                          Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё _palette                                          Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
-store_palette:
+_palette:
     struc [bp]
                 dw ?
                 db ?
@@ -202,26 +206,16 @@ store_palette:
     out     dx, al
     ret
 
-stpal macro
+sc_pal macro
     push    bp, ax, bx, cx, dx
     push    #4, #3, #2, #1
-    call    set_palette
+    call    _palette
     add     sp, 8
     pop     dx, cx, bx, ax, bp
 #em
 
-load_palettes:
-    ret
-
-ldpals macro
-#em
-
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё vblank routines                                   Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё _is_vblank                                        Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _is_vblank:
     mov     dx, IS1_RC
@@ -229,12 +223,15 @@ _is_vblank:
     and     al, 00001000xb
     ret
 
-is_vblank macro
+sc_isvb macro
     push    dx
     call    _is_vblank
     pop     dx
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _wait_vblank                                      Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _wait_vblank:
 l0: mov     dx, IS1_RC
     in      al, dx
@@ -242,12 +239,15 @@ l0: mov     dx, IS1_RC
     jz      l0
     ret
 
-wait_vblank macro
+sc_wvb macro
     push    dx, ax
     call    _wait_vblank
     pop     ax, dx
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _wait_novblank                                    Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _wait_novblank:
 l0: mov     dx, IS1_RC
     in      al, dx
@@ -255,32 +255,34 @@ l0: mov     dx, IS1_RC
     jnz     l0
     ret
 
-wait_novblank macro
+sc_wnvb macro
     push    dx, ax
     call    _wait_novblank
     pop     ax, dx
 #em
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё graphics mode functions & macros                  Ё
-;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
-;Ё                                                   Ё
-;Ё                                                   Ё
-;Ё                                                   Ё
+;Ё sc_mo13                                           Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
-mode_13 macro
+sc_mo13 macro
     mov     ah, 0
     mov     al, 13h
     int     10h
     call    font_init
 #em
 
-mode_03 macro
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё sc_mo03                                           Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+sc_mo03 macro
     mov     ah, 0
     mov     al, 3
     int     10h
 #em
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _mode_prg                                         Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _mode_prg:
     mov     dx, CRT_IC
     mov     al, 011h
@@ -318,7 +320,7 @@ l0: mov     dx, CRT_IC
     out     dx, ax
     ret
 
-mode_p macro
+sc_mprg macro
     push    bp, ax, bx, dx
     mov     bp, #1
     call    _mode_prg

@@ -47,11 +47,12 @@ bank_md struc [bp]
     md_id           db  ?
     md_type         db  ?
     md_flags        db  ?
+    md_blk_max      db  ?
     md_blk_seg      dw  ?
     md_blk_off      dw  ?
-    md_reserve      db  ?
     md_blocks       dw  16 dup(?)
-    md_props        db  ((type bank_prop) * 31) dup ?
+    md_reserve      db  983 dup(?)
+    md_props        db  ((type bank_prop) * 24) dup ?
 ends
 
 SZ_BANK_HDRS        equ type bank_block * 16
@@ -76,8 +77,8 @@ bank_file_header:
 ;³ bk_init                                           ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 bk_init:
-    alloc   SZ_BANK_HDRS_PARA, offset bank_hdrs_seg
-    memset  bank_hdrs_seg, 0, SZ_BANK_HDRS, 0
+    mm_resv SZ_BANK_HDRS_PARA, offset bank_hdrs_seg
+    mm_set  bank_hdrs_seg, 0, SZ_BANK_HDRS, 0
     mov     bank_hdrs_off, 0
     ret
 
@@ -114,7 +115,7 @@ _bank_new:
     mov     bx, [bp]
     cs mov  es, bank_hdrs_seg
     mov     bp, bank_hdrs_off
-    alloc   SZ_BANK_BLK_PARA, ax
+    mm_resv SZ_BANK_BLK_PARA, ax
     mov     md_blk_seg, ax
     mov     md_blk_off, 0
     mov     cl, bank_hdr_id

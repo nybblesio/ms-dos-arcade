@@ -10,11 +10,7 @@
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ memory allocation structures                      ³
-;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
+;³ structures                                        ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 struc [bp]
                     dw  ?
@@ -30,35 +26,64 @@ struc [bp]
     memset_value    dw  ?
 ends
 
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ variables                                         ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+start_seg_addr  dw  ?
 free_seg_addr   dw  ?
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ memory allocation functions and macros            ³
-;ÃÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ´
-;³                                                   ³
-;³                                                   ³
-;³                                                   ³
+;³ _mm_init                                          ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_mm_init:
+    mov     free_seg_addr, ds
+    add     free_seg_addr, (64 * 1024) / 16
+    mov     ax, free_seg_addr
+    mov     start_seg_addr, ax
+    ret
+
+mm_init macro
+    push    ax
+    call    _mm_init
+    pop     ax
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _mm_clr                                           ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_mm_clr:
+    mov     ax, start_seg_addr
+    mov     free_seg_addr, ax
+    ret
+
+mm_clr macro
+    push    ax
+    call    _mm_clr
+    pop     ax
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _alloc                                            ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _alloc:
     mov     bp, sp
-    cmp     free_seg_addr, 0
-    jnz     >l0
-    mov     free_seg_addr, ds
-    add     free_seg_addr, 01000h
-l0: mov     ax, free_seg_addr
+    mov     ax, free_seg_addr
     add     ax, alloc_para_n
     mov     free_seg_addr, ax
     mov     di, alloc_seg_var
     mov     [di], ax
     ret
 
-alloc macro
+mm_resv macro
     push    bp, ax, bx, di, #2, #1
     call    _alloc
     add     sp, 4
     pop     di, bx, ax, bp
 #em
 
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _memset                                           ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _memset:
     mov     bp, sp
     mov     es, memset_seg
@@ -68,11 +93,10 @@ _memset:
     es rep  stosb
     ret
 
-memset macro
+mm_set macro
     push    es, bp, ax, cx, di
     push    #4, #3, #2, #1
     call    _memset
     add     sp, 8
     pop     di, cx, ax, bp, es
 #em
-

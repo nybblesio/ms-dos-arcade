@@ -61,94 +61,94 @@ temp_ptr    dw  ?
 mouse_data: dw  2 dup (?)
 
 frame_rate:
-    strdef  '00'
+    s$_def  '00'
 
 file_label:
-    strdef  'BANK FILE:'
+    s$_def  'BANK FILE:'
 
 editor_label:
-    strdef  'EDITOR:'
+    s$_def  'EDITOR:'
 
 banks_label:
-    strdef  'BANKS:'
+    s$_def  'BANKS:'
 
 new_label:
-    strdef  'NEW'
+    s$_def  'NEW'
 
 load_label:
-    strdef  'LOAD'
+    s$_def  'LOAD'
 
 save_label:
-    strdef  'SAVE'
+    s$_def  'SAVE'
 
 exit_label:
-    strdef  'EXIT'
+    s$_def  'EXIT'
 
 add_label:
-    strdef  'ADD'
+    s$_def  'ADD'
 
 ok_label:
-    strdef  'OK'
+    s$_def  'OK'
 
 cancel_label:
-    strdef  'CANCEL'
+    s$_def  'CANCEL'
 
 remove_label:
-    strdef  'REMOVE'
+    s$_def  'REMOVE'
 
 clear_label:
-    strdef  'CLEAR'
+    s$_def  'CLEAR'
 
 props_label:
-    strdef  'PROPS'
+    s$_def  'PROPS'
 
 pal_label:
-    strdef  'PAL'
+    s$_def  'PAL'
 
 tileset_label:
-    strdef  'TILES'
+    s$_def  'TILES'
 
 tool_title:
-    strdef  'BANKED'
+    s$_def  'BANKED'
 
 tool_version:
-    strdef  'v1.0'
+    s$_def  'v1.0'
 
 tool_author:
-    strdef  'JEFF PANICI'
+    s$_def  'JEFF PANICI'
 
 tool_copyright:
-    strdef  '(C) 2017 NYBBLES.IO'
+    s$_def  '(C) 2017 NYBBLES.IO'
 
 msgbox_title:
-    strdef  'BANKED SAYS'
+    s$_def  'BANKED SAYS'
 
 test_label:
-    strdef  '00:TILE'
+    s$_def  '00:TILE'
 
 block_label:
-    strdef  'BLOCK #'
+    s$_def  'BLOCK #'
 
 block_number:
-    strdef  '00'
+    s$_def  '00'
 
 of_label:
-    strdef  'OF'
+    s$_def  'OF'
 
 block_total_number:
-    strdef  '00'
+    s$_def  '00'
 
 up_arrow_char:
-    str_defc 24
+    s$_defc 24
 
 down_arrow_char:
-    str_defc 25
+    s$_defc 25
 
 right_arrow_char:
-    str_defc 26
+    s$_defc 26
 
 left_arrow_char:
-    str_defc 27
+    s$_defc 27
 
 buttons:
 btn_new:
@@ -291,20 +291,20 @@ msgbox_state:
     st_def   STATE_MSGBOX, msgbox_cb
 
 msgbox_lines:
-msgbox_line0:   strresv 32
-msgbox_line1:   strresv 32
-msgbox_line2:   strresv 32
-msgbox_line3:   strresv 32
-msgbox_line4:   strresv 32
-msgbox_line5:   strresv 32
-msgbox_line6:   strresv 32
-msgbox_line7:   strresv 32
-msgbox_line8:   strresv 32
-msgbox_line9:   strresv 32
+msgbox_line0:   s$_resv 32
+msgbox_line1:   s$_resv 32
+msgbox_line2:   s$_resv 32
+msgbox_line3:   s$_resv 32
+msgbox_line4:   s$_resv 32
+msgbox_line5:   s$_resv 32
+msgbox_line6:   s$_resv 32
+msgbox_line7:   s$_resv 32
+msgbox_line8:   s$_resv 32
+msgbox_line9:   s$_resv 32
                 db     0feh
 
 temp_fname:
-    strresv     12
+    s$_resv     12
 
 bank_fname:
     filename    '            '
@@ -403,8 +403,8 @@ tile_bank_cb:
 ;³ spr_bank_cb                                       ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 spr_bank_cb:
-    frect   17 by 43, 144 by 144, 8 by 0
-    rect    42 by 16, 146 by 145, 0 by 0
+    vg_fbox 17 by 43, 144 by 144, 8 by 0
+    vg_box  42 by 16, 146 by 145, 0 by 0
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -518,7 +518,7 @@ fps_timer:
     mov     di, frame_rate + 1
     xor     ax, ax
     cs mov  al, fps
-    call    put_dec2
+    call    s$_dec2
     cs mov  fps, 0
     ret
 
@@ -530,17 +530,17 @@ _tab_draw:
     mov     bp, sp
     mov     bx, [bp + 2]
     inc     bh
-    frect   bx, 45 by 9, 9 by 0
-    hline   bx, 45, 0 by 0
+    vg_fbox bx, 45 by 9, 9 by 0
+    vg_hl   bx, 45, 0 by 0
     dec     bh
     inc     bl
-    vline   bx, 9, 0 by 0
+    vg_vl   bx, 9, 0 by 0
     add     bh, 2
     add     bl, 2
-    string  micro_font, test_label, bx, 7 by 0, 1
+    vg_str  micro_font, test_label, bx, 7 by 0, 1
     add     bh, 44
     sub     bl, 2
-    vline   bx, 9, 0 by 0
+    vg_vl   bx, 9, 0 by 0
     ret
 
 tb_draw macro
@@ -555,22 +555,22 @@ tb_draw macro
 ;³ base_draw                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 base_draw:
-    frect   0 by 0, 38 by 256, 8 by 0
-    vline   38 by 0, 256, 0 by 0
+    vg_fbox 0 by 0, 38 by 256, 8 by 0
+    vg_vl   38 by 0, 256, 0 by 0
 
-    string  micro_font, file_label,   42 by 2, 7 by 0, 1
-    string  micro_font, editor_label,206 by 2, 7 by 0, 1
+    vg_str  micro_font, file_label,   42 by 2, 7 by 0, 1
+    vg_str  micro_font, editor_label,206 by 2, 7 by 0, 1
 
-    string  micro_font, tool_title,  1 by 2, 0 by 0, 1
-    string  micro_font, tool_title,  2 by 3, 7 by 0, 1
+    vg_str  micro_font, tool_title,  1 by 2, 0 by 0, 1
+    vg_str  micro_font, tool_title,  2 by 3, 7 by 0, 1
 
-    string  micro_font, tool_version, 16 by 8, 0 by 0, 0
-    string  micro_font, tool_version, 17 by 9, 7 by 0, 0
+    vg_str  micro_font, tool_version, 16 by 8, 0 by 0, 0
+    vg_str  micro_font, tool_version, 17 by 9, 7 by 0, 0
 
-    hline   TAB_BAR_X by TAB_BAR_Y - 1, 218, 0 by 0
-    frect   TAB_BAR_X by TAB_BAR_Y, 218 by TAB_BAR_H,8 by 0
-    hline   TAB_BAR_X by TAB_BAR_B, 218, 0 by 0
-    string  micro_font, banks_label, 2 by TAB_BAR_Y + 3, 7 by 0, 1
+    vg_hl   TAB_BAR_X by TAB_BAR_Y - 1, 218, 0 by 0
+    vg_fbox TAB_BAR_X by TAB_BAR_Y, 218 by TAB_BAR_H,8 by 0
+    vg_hl   TAB_BAR_X by TAB_BAR_B, 218, 0 by 0
+    vg_str  micro_font, banks_label, 2 by TAB_BAR_Y + 3, 7 by 0, 1
 
     mov     cx, 4
     mov     bh, TAB_BAR_X + 10
@@ -579,18 +579,18 @@ l0: tb_draw bx
     add     bh, 50
     loop    l0
 
-    string  micro_font, left_arrow_char, TAB_BAR_X + 2 by TAB_BAR_Y + 3, 7 by 0, 1
-    string  micro_font, right_arrow_char, 248 by TAB_BAR_Y + 3, 7 by 0, 1
-    string  micro_font, up_arrow_char, 248 by TAB_BAR_Y + 14, 7 by 0, 1
-    string  micro_font, down_arrow_char, 248 by 248, 7 by 0, 1
+    vg_str  micro_font, left_arrow_char, TAB_BAR_X + 2 by TAB_BAR_Y + 3, 7 by 0, 1
+    vg_str  micro_font, right_arrow_char, 248 by TAB_BAR_Y + 3, 7 by 0, 1
+    vg_str  micro_font, up_arrow_char, 248 by TAB_BAR_Y + 14, 7 by 0, 1
+    vg_str  micro_font, down_arrow_char, 248 by 248, 7 by 0, 1
 
-    string  micro_font, block_label, TAB_BAR_X + 4 by TAB_BAR_Y + 14, 7 by 0, 1
-    string  micro_font, block_number, TAB_BAR_X + 48 by TAB_BAR_Y + 14, 7 by 0, 1
-    string  micro_font, of_label, TAB_BAR_X + 66 by TAB_BAR_Y + 14, 7 by 0, 1
-    string  micro_font, block_total_number, TAB_BAR_X + 84 by TAB_BAR_Y + 14, 7 by 0, 1
+    vg_str  micro_font, block_label, TAB_BAR_X + 4 by TAB_BAR_Y + 14, 7 by 0, 1
+    vg_str  micro_font, block_number, TAB_BAR_X + 48 by TAB_BAR_Y + 14, 7 by 0, 1
+    vg_str  micro_font, of_label, TAB_BAR_X + 66 by TAB_BAR_Y + 14, 7 by 0, 1
+    vg_str  micro_font, block_total_number, TAB_BAR_X + 84 by TAB_BAR_Y + 14, 7 by 0, 1
 
-    frect   43 by 20, 128 by 128, 8 by 0
-    rect    42 by 20, 128 by 128, 0 by 0
+    vg_fbox 43 by 20, 128 by 128, 8 by 0
+    vg_box  42 by 20, 128 by 128, 0 by 0
 
 ;#if TILES
     ; tile selection grid example
@@ -598,7 +598,7 @@ l0: tb_draw bx
     mov     bh, TAB_BAR_X + 4
     mov     bl, TAB_BAR_Y + 26
 l2: mov     cx, 22
-l1: frect   bx, 8 by 8, 4 by 0
+l1: vg_fbox bx, 8 by 8, 4 by 0
     add     bh, 9
     loop    l1
     dec     dx
@@ -612,7 +612,7 @@ l1: frect   bx, 8 by 8, 4 by 0
     mov     bh, 43
     mov     bl, 21
 l4: mov     cx, 8
-l3: frect   bx, 15 by 15, 3 by 0
+l3: vg_fbox bx, 15 by 15, 3 by 0
     add     bh, 16
     loop    l3
     add     bl, 16
@@ -628,7 +628,7 @@ l3: frect   bx, 15 by 15, 3 by 0
     mov     bh, TAB_BAR_X + 4
     mov     bl, TAB_BAR_Y + 28
 l2: mov     cx, 12
-l1: frect   bx, 16 by 16, 4 by 0
+l1: vg_fbox bx, 16 by 16, 4 by 0
     add     bh, 17
     loop    l1
     dec     dx
@@ -642,7 +642,7 @@ l1: frect   bx, 16 by 16, 4 by 0
     mov     bh, 43
     mov     bl, 21
 l4: mov     cx, 16
-l3: frect   bx, 7 by 7, 3 by 0
+l3: vg_fbox bx, 7 by 7, 3 by 0
     add     bh, 8
     loop    l3
     add     bl, 8
@@ -663,7 +663,7 @@ draw:
     ret
 
 l0: mov     draw_flag, 0
-    clear
+    vg_clr
     call    base_draw
     tf_draw text_fields
     cu_draw
@@ -672,7 +672,7 @@ l0: mov     draw_flag, 0
 
 l5:
 #if DEBUG
-    string  micro_font, frame_rate, 2 by 250, 0 by 0, 1
+    vg_str  micro_font, frame_rate, 2 by 250, 0 by 0, 1
 #endif
     mo_draw mouse_data, cursor_pointer2
 
@@ -682,12 +682,12 @@ l5:
 ;³ show                                              ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 show:
-    is_vblank
+    sc_isvb
     cmp     al, 0
     jnz     >l0
     ret
-l0: flip
-    wait_novblank
+l0: vg_flip
+    sc_wnvb
     cs inc  fps
     cs mov  draw_flag, 1
     ret
@@ -696,22 +696,22 @@ l0: flip
 ;³ allocate                                          ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 allocate:
-    alloc   SZ_CTRL_RAM / 16,  offset ctrl_ram_ptr
-    memset  ctrl_ram_ptr, 0, SZ_CTRL_RAM, 0
+    mm_resv SZ_CTRL_RAM / 16,  offset ctrl_ram_ptr
+    mm_set  ctrl_ram_ptr, 0, SZ_CTRL_RAM, 0
 
     mov     es, ctrl_ram_ptr
     mov     bp, 0
 
-    alloc   SZ_TILE_BANK / 16, offset temp_ptr
-    memset  temp_ptr, 0, SZ_TILE_BANK, 024h
+    mm_resv SZ_TILE_BANK / 16, offset temp_ptr
+    mm_set  temp_ptr, 0, SZ_TILE_BANK, 024h
     es_movm c_bg_tiles, temp_ptr
 
-    alloc   SZ_TILE_BANK / 16, offset temp_ptr
-    memset  temp_ptr,   0, SZ_TILE_BANK, 07fh
+    mm_resv SZ_TILE_BANK / 16, offset temp_ptr
+    mm_set  temp_ptr,   0, SZ_TILE_BANK, 07fh
     es_movm c_spr_tiles, temp_ptr
 
-    alloc   SZ_VRAM / 16, offset back_buffer_ptr
-    memset  back_buffer_ptr, 0, SZ_VRAM, 0
+    mm_resv SZ_VRAM / 16, offset back_buffer_ptr
+    mm_set  back_buffer_ptr, 0, SZ_VRAM, 0
 
     ret
 
@@ -719,6 +719,7 @@ allocate:
 ;³ init                                              ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 init:
+    mm_init
     call    allocate
     call    bk_init
     call    vg_init
