@@ -33,6 +33,10 @@
 บ TASKS                                                                   บ
 ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
 
+- mouse.8 : drawing mouse cursor not clipping
+
+****
+
 - change bank interface to allow specifying max number of blocks when
   creating new bank
 
@@ -45,16 +49,6 @@
 - create new structure for grid-based mouse selection
     - if mouse is within bounds, pick proper row/column based on config
     - click detection
-
-- extend button structure to support:
-    - background & border color
-    - flag for render just the text
-
-- macro/function to set length/content of strdef/strresv
-
-- pick bank type UI: radio button list
-
-- mouse.8 : drawing mouse cursor not clipping
 
 - file.8: add table of error messages and a way to look them up
 
@@ -84,3 +78,8 @@
     - movsb is what I wanted to use
 - store number of max blocks somewhere in bank header
 - button.8: flag for no rendering, e.g. for use with tabs
+- macro/function to set content of strdef/strresv
+- extend button structure to support:
+    - background & border color
+    - flag for render just the text
+- pick bank type UI small pop-up like window with buttons

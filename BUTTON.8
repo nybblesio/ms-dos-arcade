@@ -16,6 +16,7 @@ F_BTN_NONE      equ 0000_0000_0000_0000xb
 F_BTN_VISIBLE   equ 0000_0000_0000_0001xb
 F_BTN_ENABLED   equ 0000_0000_0000_0010xb
 F_BTN_NODRAW    equ 0000_0000_0000_0100xb
+F_BTN_TXTONLY   equ 0000_0000_0000_1000xb
 F_BTN_END       equ 1000_0000_0000_0000xb
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -27,6 +28,8 @@ button struc [bp]
     btn_txt_pos dw ?
     btn_pos     dw ?
     btn_size    dw ?
+    btn_bg_clr  dw ?
+    btn_bdr_clr dw ?
     btn_func    dw ?
 ends
 
@@ -34,7 +37,7 @@ ends
 ;³ macros                                            ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 bt_def macro
-    dw #1, #2, #3, #4, #5, #6
+    dw #1, #2, #3, #4, #5, #6, #7, #8
 #em
 
 bt_set macro
@@ -95,24 +98,28 @@ bt_fire macro
 ;³ _btn_draw                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _btn_draw:
-    cs mov  ax, btn_pos
-    cs mov  cx, btn_size
-    xor     bx, bx
-    mov     bl, ch
-    vg_fbox ax, cx, 9 by 0
-    vg_hl   ax, bx, 0 by 0
-    cs mov  si, btn_txt
-    cs mov  dx, btn_txt_pos
-    push    ax
-    cs mov  ax, btn_flags
+    mov     ax, btn_flags
     test    ax, F_BTN_ENABLED
+    setnz   cl
+    test    ax, F_BTN_TXTONLY
+    setnz   ch
+    cmp     ch, 1
     jz      >l0
-    vg_str  micro_font, si, dx, 7 by 0, 1
-    jmp     >l1
-l0: vg_str  micro_font, si, dx, 8 by 0, 1
-l1: pop     ax
-    add     al, cl
-    vg_hl   ax, bx, 0 by 0
+    push    cx
+    mov     bx, btn_pos
+    mov     cx, btn_size
+    mov     dx, btn_bg_clr
+    vg_fbox bx, cx, dx
+    mov     dx, btn_bdr_clr
+    vg_box  bx, cx, dx
+    pop     cx
+l0: mov     dx, 8 by 0
+    cmp     cl, 1
+    jnz     >l1
+    mov     dx, 7 by 0
+l1: mov     si, btn_txt
+    mov     bx, btn_txt_pos
+    vg_str  micro_font, si, bx, dx, 1
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -133,8 +140,8 @@ l3: add     bp, type button
     ret
 
 bt_draw macro
-    push    bp, ax, bx, cx, dx
+    push    bp, ax, bx, cx, dx, si
     mov     bp, #1
     call    _btns_draw
-    pop     dx, cx, bx, ax, bp
+    pop     si, dx, cx, bx, ax, bp
 #em

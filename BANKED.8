@@ -53,6 +53,11 @@ TAB_BAR_Y equ 160
 TAB_BAR_H equ 10
 TAB_BAR_B equ TAB_BAR_Y + TAB_BAR_H
 
+PICK_BOX_Y equ TAB_BAR_B - 2
+PICK_BOX_X equ 40
+PICK_BOX_MY equ PICK_BOX_Y + 12
+PICK_BOX_MX equ PICK_BOX_X + 4
+
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ structures & variables                            ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
@@ -120,6 +125,9 @@ tool_copyright:
 msgbox_title:
     s$_def  'BANKED SAYS'
 
+pick_type_title:
+    s$_def  'PICK'
+
 test_label:
     s$_def  '00:TILE'
 
@@ -147,56 +155,110 @@ right_arrow_char:
 left_arrow_char:
     s$_defc 27
 
+type_tile:
+    s$_def  'TILE'
+
+type_spr:
+    s$_def  'SPR'
+
+type_font:
+    s$_def  'FONT'
+
+type_bg:
+    s$_def  'BG'
+
+type_pal:
+    s$_def  'PAL'
+
+type_snd:
+    s$_def  'SND'
+
+type_mod:
+    s$_def  'MOD'
+
 buttons:
 btn_new:
-    bt_def F_BTN_ENABLED or F_BTN_VISIBLE, new_label, 8 by 22, 0 by 20, 38 by 8, btn_new_cb
+    bt_def F_BTN_ENABLED or F_BTN_VISIBLE, new_label, 8 by 22, 0 by 20, 38 by 8, 9 by 0, 0 by 0, btn_new_cb
 
 btn_load:
-    bt_def F_BTN_ENABLED or F_BTN_VISIBLE, load_label, 7 by 32, 0 by 30, 38 by 8, btn_load_cb
+    bt_def F_BTN_ENABLED or F_BTN_VISIBLE, load_label, 7 by 32, 0 by 30, 38 by 8, 9 by 0, 0 by 0, btn_load_cb
 
 btn_save:
-    bt_def F_BTN_VISIBLE, save_label, 7 by 42, 0 by 40, 38 by 8, btn_save_cb
+    bt_def F_BTN_VISIBLE, save_label, 7 by 42, 0 by 40, 38 by 8, 9 by 0, 0 by 0,btn_save_cb
 
 btn_exit:
-    bt_def F_BTN_ENABLED or F_BTN_VISIBLE, exit_label, 7 by 52, 0 by 50, 38 by 8, btn_exit_cb
+    bt_def F_BTN_ENABLED or F_BTN_VISIBLE, exit_label, 7 by 52, 0 by 50, 38 by 8, 9 by 0, 0 by 0, btn_exit_cb
 
 btn_add:
-    bt_def F_BTN_VISIBLE, add_label, 10 by TAB_BAR_B + 6, 0 by TAB_BAR_B + 4, 38 by 8, btn_add_bank_cb
+    bt_def F_BTN_VISIBLE, add_label, 10 by TAB_BAR_B + 6, 0 by TAB_BAR_B + 4, 38 by 8, 9 by 0, 0 by 0, btn_add_bank_cb
 
 btn_remove:
-    bt_def F_BTN_VISIBLE, remove_label, 2 by TAB_BAR_B + 16, 0 by TAB_BAR_B + 14, 38 by 8, btn_remove_bank_cb
+    bt_def F_BTN_VISIBLE, remove_label, 2 by TAB_BAR_B + 16, 0 by TAB_BAR_B + 14, 38 by 8, 9 by 0, 0 by 0, btn_remove_bank_cb
 
 btn_clear:
-    bt_def F_BTN_VISIBLE, clear_label, 5 by TAB_BAR_B + 26, 0 by TAB_BAR_B + 24, 38 by 8, btn_clear_bank_cb
+    bt_def F_BTN_VISIBLE, clear_label, 5 by TAB_BAR_B + 26, 0 by TAB_BAR_B + 24, 38 by 8, 9 by 0, 0 by 0, btn_clear_bank_cb
 
 btn_props:
-    bt_def F_BTN_VISIBLE, props_label, 5 by TAB_BAR_B + 36, 0 by TAB_BAR_B + 34, 38 by 8, btn_props_bank_cb
+    bt_def F_BTN_VISIBLE, props_label, 5 by TAB_BAR_B + 36, 0 by TAB_BAR_B + 34, 38 by 8, 9 by 0, 0 by 0, btn_props_bank_cb
 
 btn_pal:
-    bt_def F_BTN_VISIBLE, pal_label, 10 by TAB_BAR_B + 52, 0 by TAB_BAR_B + 50, 38 by 8, btn_pal_cb
+    bt_def F_BTN_VISIBLE, pal_label, 10 by TAB_BAR_B + 52, 0 by TAB_BAR_B + 50, 38 by 8, 6 by 0, 0 by 0, btn_pal_cb
 
 btn_tileset:
-    bt_def F_BTN_VISIBLE, tileset_label, 4 by TAB_BAR_B + 62, 0 by TAB_BAR_B + 60, 38 by 8, btn_tileset_cb
+    bt_def F_BTN_VISIBLE, tileset_label, 4 by TAB_BAR_B + 62, 0 by TAB_BAR_B + 60, 38 by 8, 6 by 0, 0 by 0, btn_tileset_cb
 
 btn_ok:
-    bt_def F_BTN_NONE, ok_label, 220 by 107, 205 by 105, 38 by 8, btn_ok_cb
+    bt_def F_BTN_NONE, ok_label, 220 by 107, 205 by 105, 38 by 8, 9 by 0, 0 by 0, btn_ok_cb
 
 btn_cancel:
-    bt_def F_BTN_NONE, cancel_label, 167 by 107, 165 by 105, 38 by 8, btn_cancel_cb
+    bt_def F_BTN_NONE, cancel_label, 167 by 107, 165 by 105, 38 by 8, 9 by 0, 0 by 0, btn_cancel_cb
 
 btn_tab1:
-    bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 10 by TAB_BAR_Y + 1, 48 by 9, btn_tab1_cb
+    bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 10 by TAB_BAR_Y + 1, 48 by 9,9 by 0, 0 by 0, btn_tab1_cb
 
 btn_tab2:
-    bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 60 by TAB_BAR_Y + 1, 48 by 9, btn_tab2_cb
+    bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 60 by TAB_BAR_Y + 1, 48 by 9,9 by 0, 0 by 0, btn_tab2_cb
 
 btn_tab3:
-    bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 110 by TAB_BAR_Y + 1, 48 by 9, btn_tab3_cb
+    bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 110 by TAB_BAR_Y + 1, 48 by 9, 9 by 0, 0 by 0, btn_tab3_cb
 
 btn_tab4:
-    bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 160 by TAB_BAR_Y + 1, 48 by 9, btn_tab4_cb
+    bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 160 by TAB_BAR_Y + 1, 48 by 9, 9 by 0, 0 by 0, btn_tab4_cb
 
-    bt_def F_BTN_END, 0, 0, 0, 0
+btn_bank_prev:
+    bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, left_arrow_char, TAB_BAR_X + 2 by TAB_BAR_Y + 3, 0, 6 by 6, 0, 0, btn_bank_prev_cb
+
+btn_bank_next:
+    bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, right_arrow_char, 248 by TAB_BAR_Y + 3, 0, 6 by 6, 0, 0, btn_bank_next_cb
+
+btn_block_prev:
+    bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, up_arrow_char, 248 by TAB_BAR_Y + 14, 0, 6 by 6, 0, 0, btn_block_prev_cb
+
+btn_block_next:
+    bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, down_arrow_char, 248 by 248, 0, 6 by 6, 0, 0, btn_block_next_cb
+
+btn_type_tile:
+    bt_def F_BTN_NONE, type_tile, PICK_BOX_MX + 4 by PICK_BOX_MY + 2, PICK_BOX_MX by PICK_BOX_MY, 28 by 8, 9 by 0, 0 by 0, btn_type_tile_cb
+
+btn_type_spr:
+    bt_def F_BTN_NONE, type_spr, PICK_BOX_MX + 6 by PICK_BOX_MY + 12, PICK_BOX_MX by PICK_BOX_MY + 10, 28 by 8, 9 by 0, 0 by 0, btn_type_spr_cb
+
+btn_type_font:
+    bt_def F_BTN_NONE, type_font, PICK_BOX_MX + 4 by PICK_BOX_MY + 22, PICK_BOX_MX by PICK_BOX_MY + 20, 28 by 8, 9 by 0, 0 by 0, btn_type_font_cb
+
+btn_type_pal:
+    bt_def F_BTN_NONE, type_pal, PICK_BOX_MX + 6 by PICK_BOX_MY + 32, PICK_BOX_MX by PICK_BOX_MY + 30, 28 by 8, 9 by 0, 0 by 0, btn_type_pal_cb
+
+btn_type_bg:
+    bt_def F_BTN_NONE, type_bg, PICK_BOX_MX + 8 by PICK_BOX_MY + 42, PICK_BOX_MX by PICK_BOX_MY + 40, 28 by 8, 9 by 0, 0 by 0, btn_type_bg_cb
+
+btn_type_snd:
+    bt_def F_BTN_NONE, type_snd, PICK_BOX_MX + 6 by PICK_BOX_MY + 52, PICK_BOX_MX by PICK_BOX_MY + 50, 28 by 8, 9 by 0, 0 by 0, btn_type_snd_cb
+
+btn_type_mod:
+    bt_def F_BTN_NONE, type_mod, PICK_BOX_MX + 6 by PICK_BOX_MY + 62, PICK_BOX_MX by PICK_BOX_MY + 60, 28 by 8, 9 by 0, 0 by 0, btn_type_mod_cb
+
+    bt_def F_BTN_END, 0, 0, 0, 0, 0, 0
 
 valid_fname_keys:
     vk_def   002h,    0,  '1'
@@ -582,6 +644,72 @@ btn_tileset_cb:
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_bank_prev_cb                                  ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_bank_prev_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_bank_next_cb                                  ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_bank_next_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_block_prev_cb                                 ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_block_prev_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_block_next_cb                                 ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_block_next_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_type_tile_cb                                  ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_type_tile_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_type_spr_cb                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_type_spr_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_type_font_cb                                  ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_type_font_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_type_bg_cb                                    ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_type_bg_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_type_pal_cb                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_type_pal_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_type_snd_cb                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_type_snd_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_type_mod_cb                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_type_mod_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_exit_cb                                       ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_exit_cb:
@@ -660,8 +788,6 @@ l0: tb_draw bx, ax
     inc     ax
     add     bh, 50
     loop    l0
-    vg_str  micro_font, left_arrow_char, TAB_BAR_X + 2 by TAB_BAR_Y + 3, 7 by 0, 1
-    vg_str  micro_font, right_arrow_char, 248 by TAB_BAR_Y + 3, 7 by 0, 1
     ret
 
 tb_tabs macro
@@ -711,8 +837,6 @@ l1: vg_fbox bx, 16 by 16, 4 by 0
 ;³ _tb_viewer_draw                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _tb_viewer_draw:
-    vg_str  micro_font, up_arrow_char, 248 by TAB_BAR_Y + 14, 7 by 0, 1
-    vg_str  micro_font, down_arrow_char, 248 by 248, 7 by 0, 1
     vg_str  micro_font, block_label, TAB_BAR_X + 4 by TAB_BAR_Y + 14, 7 by 0, 1
     vg_str  micro_font, block_number, TAB_BAR_X + 48 by TAB_BAR_Y + 14, 7 by 0, 1
     vg_str  micro_font, of_label, TAB_BAR_X + 66 by TAB_BAR_Y + 14, 7 by 0, 1
@@ -727,6 +851,20 @@ tb_vwr macro
     push    bp
     call    _tb_viewer_draw
     pop     bp
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _pb_draw                                          ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_pb_draw:
+    vg_fbox PICK_BOX_X by PICK_BOX_Y, 35 by 85, 8 by 0
+    vg_box  PICK_BOX_X by PICK_BOX_Y, 35 by 85, 0 by 0
+    vg_fbox PICK_BOX_X + 2 by PICK_BOX_Y + 2, 32 by 7,  9 by 0
+    vg_str  micro_font, pick_type_title, PICK_BOX_X + 6 by PICK_BOX_Y + 3, 7 by 0, 1
+    ret
+
+pb_draw macro
+    call    _pb_draw
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿

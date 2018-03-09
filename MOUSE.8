@@ -183,40 +183,52 @@ _mouse_draw:
     xor     bx, bx
     xor     dx, dx
     mov     dh, 16
+    mov     cx, di
+    mov     dl, cl
     mov     bx, 1000_0000_0000_0000xb
 
-m0: ; need to clip on y & x here
-    ;
-    cs mov  ax, [si]
+l0: cmp     ch, 255
+    jb      >l1
+    ret
+l1: cmp     cl, 255
+    jb      >l2
+    jmp     >l5
+
+l2: cs mov  ax, [si]
     test    ax, bx
-    jnz     >m1
+    jnz     >l3
     es mov  b[di], 0
 
-m1: cs mov  ax, [si + 32]
+l3: cs mov  ax, [si + 32]
     test    ax, bx
-    jz      >m2
+    jz      >l4
     es mov  b[di], 7
 
-m2: inc     di
+l4: inc     di
+    inc     cl
     shr     bx, 1
     cmp     bx, 0
-    jnz     m0
-    add     si, 2
+    jnz     l0
+
+l5: add     si, 2
     mov     bx, 1000_0000_0000_0000xb
+    ; need to adjust di for x clipped lines
     add     di, VRAM_PITCH - 16
+    inc     ch
+    mov     cl, dl
     dec     dh
     cmp     dh, 0
-    jnz     m0
+    jnz     l0
     ret
 
 mo_draw macro
-    push    es, bp, ds, ax, bx, si
+    push    es, bp, ds, ax, bx, cx, si, di
     mov     bp, #1
     push    ms_pos
     push    #2
     call    _mouse_draw
     add     sp, 4
-    pop     si, bx, ax, ds, bp, es
+    pop     di, si, cx, bx, ax, ds, bp, es
 #em
 
 ;旼컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴�

@@ -30,6 +30,28 @@ s$_resv macro
 #em
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _s$_cpy                                           Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+_s$_cpy:
+    mov     bp, sp
+    mov     cx, [bp + 2]
+    mov     si, [bp + 4]
+    mov     di, [bp + 6]
+    mov     es, cs
+    cld
+l0: movsb
+    loop    l0
+    ret
+
+s$_cpy macro
+    push    bp, es, ax, cx, si, di
+    push    #1, #2, #3
+    call    _s$_cpy
+    add     sp, 6
+    pop     di, si, cx, ax, es, bp
+#em
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
 ;Ё s$_dec2                                           Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 s$_dec2:

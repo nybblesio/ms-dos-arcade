@@ -24,7 +24,7 @@ msgbox_draw:
 l0: vg_fbox 50 by 33, 196 by 85, 8 by 0
     vg_box  50 by 33, 196 by 85, 0 by 0
     vg_fbox 52 by 35, 193 by 7,  9 by 0
-    vg_str  offset micro_font, msgbox_title, 110 by 36, 7 by 0, 1
+    vg_str  micro_font, msgbox_title, 110 by 36, 7 by 0, 1
     xor     bx, bx
     xor     cx, cx
     mov     bh, 53
@@ -34,7 +34,7 @@ l1: mov     cl, b[bp]
     cmp     cl, 0feh
     jne     >l3
     ret
-l3: vg_str  offset micro_font, bp, bx, 7 by 0, 1
+l3: vg_str  micro_font, bp, bx, 7 by 0, 1
     add     bl, 6
     inc     bp
     add     bp, cx
