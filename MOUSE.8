@@ -186,36 +186,30 @@ _mouse_draw:
     mov     cx, di
     mov     dl, cl
     mov     bx, 1000_0000_0000_0000xb
-
 l0: cmp     ch, 255
     jb      >l1
     ret
 l1: cmp     cl, 255
     jb      >l2
     jmp     >l5
-
 l2: cs mov  ax, [si]
     test    ax, bx
     jnz     >l3
     es mov  b[di], 0
-
 l3: cs mov  ax, [si + 32]
     test    ax, bx
     jz      >l4
     es mov  b[di], 7
-
 l4: inc     di
     inc     cl
     shr     bx, 1
     cmp     bx, 0
     jnz     l0
-
 l5: add     si, 2
     mov     bx, 1000_0000_0000_0000xb
-    ; need to adjust di for x clipped lines
-    add     di, VRAM_PITCH - 16
     inc     ch
     mov     cl, dl
+    mov     di, cx
     dec     dh
     cmp     dh, 0
     jnz     l0

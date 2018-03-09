@@ -33,9 +33,7 @@
 บ TASKS                                                                   บ
 ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
 
-- mouse.8 : drawing mouse cursor not clipping
-
-****
+- file.8: add table of error messages and a way to look them up
 
 - change bank interface to allow specifying max number of blocks when
   creating new bank
@@ -50,7 +48,6 @@
     - if mouse is within bounds, pick proper row/column based on config
     - click detection
 
-- file.8: add table of error messages and a way to look them up
 
 - bank.8: determine how errors will work going back to BANKED & game
         : finish load & save
@@ -83,3 +80,4 @@
     - background & border color
     - flag for render just the text
 - pick bank type UI small pop-up like window with buttons
+- mouse.8 : drawing mouse cursor not clipping
