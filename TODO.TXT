@@ -36,8 +36,6 @@
 - change bank interface to allow specifying max number of blocks when
   creating new bank
 
-- store number of max blocks somewhere in bank header
-
 - keyboard interface for block scrolling
 
 - keyboard interface for bank selection/scrolling
@@ -51,7 +49,6 @@
 - extend button structure to support:
     - background & border color
     - flag for render just the text
-    - flag for no rendering, e.g. for use with tabs
 
 - macro/function to set length/content of strdef/strresv
 
@@ -74,7 +71,6 @@
 
 - key/value pair editor UI
 
-
 ษอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออป
 บ DONE                                                                    บ
 ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
@@ -86,3 +82,5 @@
 - why lodsb/stosb not working?
     - lodsb uses DS and stosb uses ES, not DS
     - movsb is what I wanted to use
+- store number of max blocks somewhere in bank header
+- button.8: flag for no rendering, e.g. for use with tabs

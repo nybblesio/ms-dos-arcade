@@ -180,9 +180,9 @@ _string:
     xor     cx, cx
     cs mov  cl, b[si]
     cmp     cl, 0
-    jnz     >c3
+    jnz     >c0
     ret
-c3: inc     si
+c0: inc     si
     mov     bh, str_y
     mov     bl, str_x
     mov     dl, str_pal
@@ -192,32 +192,34 @@ c3: inc     si
     mov     bp, str_fnt
     mov     ds, f_segment
     cs mov  es, back_buffer_ptr
-s0: push    bx, cx, dx
+c1: push    bx, cx, dx
     cs mov  al, [si]
+    cmp     al, 020h
+    je      >c5
     mul     f_height
     mov     di, f_offset
     add     di, ax
     mov     dh, f_width
     mov     ch, f_height
-c0: mov     ah, f_mask
+c2: mov     ah, f_mask
     ds mov  al, [di]
-c1: mov     cl, al
+c3: mov     cl, al
     and     cl, ah
-    jz      >c2
+    jz      >c4
     es mov  [bx], dl
-c2: inc     bl
+c4: inc     bl
     shr     ah, 1
-    jne     c1
+    jne     c3
     inc     di
     inc     bh
     sub     bl, dh
     dec     ch
-    jne     c0
-    pop     dx, cx, bx
+    jne     c2
+c5: pop     dx, cx, bx
     inc     si
     cs add  bl, f_width
     add     bl, dh
-    loop    s0
+    loop    c1
     ret
 
 vg_str macro
@@ -567,11 +569,11 @@ l1: es mov  [bx], dl
     ret
 
 vg_box macro
-    push    es, bp, ax, bx, cx, dx
+    push    bp, bx, cx, dx
     push    #3, #2, #1
     call    _rect
     add     sp, 6
-    pop     dx, cx, bx, ax, bp, es
+    pop     dx, cx, bx, bp
 #em
 
 ;旼컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴�
@@ -611,11 +613,11 @@ l0: es mov  [bx], al
     ret
 
 vg_fbox macro
-    push    bp, ax, bx, cx, dx
+    push    bp, ax, bx, cx
     push    #3, #2, #1
     call    _frect
     add     sp, 6
-    pop     dx, cx, bx, ax, bp
+    pop     cx, bx, ax, bp
 #em
 
 

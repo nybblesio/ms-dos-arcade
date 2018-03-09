@@ -31,6 +31,7 @@ include button.8
 include txtfield.8
 include stmach.8
 include msgbox.8
+include tiled.8
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ constants                                         ³
@@ -44,7 +45,8 @@ STATE_SPR_BANK  equ 5
 STATE_TILE_BANK equ 6
 STATE_PAL_BANK  equ 7
 STATE_BG_BANK   equ 8
-STATE_MSGBOX    equ 9
+STATE_FONT_BANK equ 9
+STATE_MSGBOX    equ 10
 
 TAB_BAR_X equ 38
 TAB_BAR_Y equ 160
@@ -54,11 +56,6 @@ TAB_BAR_B equ TAB_BAR_Y + TAB_BAR_H
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ structures & variables                            ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-
-even
-
-temp_ptr    dw  ?
-mouse_data: dw  2 dup (?)
 
 frame_rate:
     s$_def  '00'
@@ -187,6 +184,18 @@ btn_ok:
 btn_cancel:
     bt_def F_BTN_NONE, cancel_label, 167 by 107, 165 by 105, 38 by 8, btn_cancel_cb
 
+btn_tab1:
+    bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 10 by TAB_BAR_Y + 1, 48 by 9, btn_tab1_cb
+
+btn_tab2:
+    bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 60 by TAB_BAR_Y + 1, 48 by 9, btn_tab2_cb
+
+btn_tab3:
+    bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 110 by TAB_BAR_Y + 1, 48 by 9, btn_tab3_cb
+
+btn_tab4:
+    bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 160 by TAB_BAR_Y + 1, 48 by 9, btn_tab4_cb
+
     bt_def F_BTN_END, 0, 0, 0, 0
 
 valid_fname_keys:
@@ -270,25 +279,34 @@ bank_file_field:
     tf_def  F_TXT_END, 0, 0, 0, 0
 
 no_file_state:
-    st_def   STATE_NO_FILE, no_file_cb
+    st_def  STATE_NO_FILE, no_file_cb
 
 new_file_state:
-    st_def   STATE_NEW_FILE, new_file_cb
+    st_def  STATE_NEW_FILE, new_file_cb
 
 load_file_state:
-    st_def   STATE_LOAD_FILE, load_file_cb
+    st_def  STATE_LOAD_FILE, load_file_cb
 
 no_bank_state:
-    st_def   STATE_NO_BANK, no_bank_cb
+    st_def  STATE_NO_BANK, no_bank_cb
 
 tile_bank_state:
-    st_def   STATE_TILE_BANK, tile_bank_cb
+    st_def  STATE_TILE_BANK, tile_bank_cb
 
 spr_bank_state:
-    st_def   STATE_SPR_BANK, spr_bank_cb
+    st_def  STATE_SPR_BANK, spr_bank_cb
+
+pal_bank_state:
+    st_def  STATE_PAL_BANK, pal_bank_cb
+
+font_bank_state:
+    st_def  STATE_FONT_BANK, font_bank_cb
+
+bg_bank_state:
+    st_def  STATE_BG_BANK, bg_bank_cb
 
 msgbox_state:
-    st_def   STATE_MSGBOX, msgbox_cb
+    st_def  STATE_MSGBOX, msgbox_cb
 
 msgbox_lines:
 msgbox_line0:   s$_resv 32
@@ -309,9 +327,13 @@ temp_fname:
 bank_fname:
     filename    '            '
 
-fps                 db      ?
-exit_code           db      ?
-draw_flag           db      ?
+fps         db  ?
+exit_code   db  ?
+draw_flag   db  ?
+temp_ptr    dw  ?
+mouse_data: dw  2 dup (?)
+viewer_cb:  dw  0
+selected_tb db  0
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ msgbox_show                                       ³
@@ -397,14 +419,33 @@ no_bank_cb:
 ;³ tile_bank_cb                                      ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 tile_bank_cb:
+    te_draw 8, 15
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ spr_bank_cb                                       ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 spr_bank_cb:
-    vg_fbox 17 by 43, 144 by 144, 8 by 0
-    vg_box  42 by 16, 146 by 145, 0 by 0
+    te_draw 16, 7
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ pal_bank_cb                                       ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+pal_bank_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ bg_bank_cb                                        ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+bg_bank_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ font_bank_cb                                      ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+font_bank_cb:
+    te_draw 5, 24
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -417,6 +458,42 @@ exit_cb:
     mov     ah, 04ch
     mov     al, exit_code
     int     21h
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_tab1_cb                                       ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_tab1_cb:
+    push    bp
+    mov     selected_tb, 1
+    mov     bp, viewer_cb
+    mov     w[bp], tile_viewer_cb
+    pop     bp
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_tab2_cb                                       ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_tab2_cb:
+    push    bp
+    mov     selected_tb, 2
+    mov     bp, viewer_cb
+    mov     w[bp], spr_viewer_cb
+    pop     bp
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_tab3_cb                                       ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_tab3_cb:
+    mov     selected_tb, 3
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_tab4_cb                                       ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_tab4_cb:
+    mov     selected_tb, 4
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -523,21 +600,31 @@ fps_timer:
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ _tab_draw                                         ³
+;³ _tb_tab_draw                                      ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-; 27 ->  28 <-
-_tab_draw:
+_tb_tab_draw:
     mov     bp, sp
-    mov     bx, [bp + 2]
+    mov     ax, [bp + 2]
+    cmp     al, selected_tb
+    setz    al
+    mov     dx, 1 by 0  ; dark blue background
+    cmp     al, 1
+    jnz     >l0
+    mov     dx, 9 by 0  ; purple-ish background
+l0: mov     bx, [bp + 4]
     inc     bh
-    vg_fbox bx, 45 by 9, 9 by 0
+    vg_fbox bx, 45 by 9, dx
     vg_hl   bx, 45, 0 by 0
     dec     bh
     inc     bl
     vg_vl   bx, 9, 0 by 0
     add     bh, 2
     add     bl, 2
-    vg_str  micro_font, test_label, bx, 7 by 0, 1
+    mov     dx, 8 by 0
+    cmp     al, 1
+    jnz     >l1
+    mov     dx, 7 by 0
+l1: vg_str  micro_font, test_label, bx, dx, 1
     add     bh, 44
     sub     bl, 2
     vg_vl   bx, 9, 0 by 0
@@ -545,10 +632,101 @@ _tab_draw:
 
 tb_draw macro
     push    bp, ax, bx, cx, dx
-    push    #1
-    call    _tab_draw
-    add     sp, 2
+    push    #1, #2
+    call    _tb_tab_draw
+    add     sp, 4
     pop     dx, cx, bx, ax, bp
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _tb_bar_draw                                      ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_tb_bar_draw:
+    vg_hl   TAB_BAR_X by TAB_BAR_Y - 1, 218, 0 by 0
+    vg_fbox TAB_BAR_X by TAB_BAR_Y, 218 by TAB_BAR_H,8 by 0
+    vg_hl   TAB_BAR_X by TAB_BAR_B, 218, 0 by 0
+    vg_str  micro_font, banks_label, 2 by TAB_BAR_Y + 3, 7 by 0, 1
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _tb_tabs_draw                                     ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_tb_tabs_draw:
+    mov     ax, 1
+    mov     cx, 4
+    mov     bh, TAB_BAR_X + 10
+    mov     bl, TAB_BAR_Y + 1
+l0: tb_draw bx, ax
+    inc     ax
+    add     bh, 50
+    loop    l0
+    vg_str  micro_font, left_arrow_char, TAB_BAR_X + 2 by TAB_BAR_Y + 3, 7 by 0, 1
+    vg_str  micro_font, right_arrow_char, 248 by TAB_BAR_Y + 3, 7 by 0, 1
+    ret
+
+tb_tabs macro
+    push    ax, cx, bx
+    call    _tb_bar_draw
+    call    _tb_tabs_draw
+    pop     bx, cx, ax
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ tile_viewer_cb                                    ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+tile_viewer_cb:
+    mov     dx, 6
+    mov     bh, TAB_BAR_X + 4
+    mov     bl, TAB_BAR_Y + 26
+l0: mov     cx, 22
+l1: vg_fbox bx, 8 by 8, 4 by 0
+    add     bh, 9
+    loop    l1
+    dec     dx
+    add     bl, 9
+    mov     bh, TAB_BAR_X + 4
+    cmp     dx, 0
+    jnz     l0
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ spr_viewer_cb                                     ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+spr_viewer_cb:
+    mov     dx, 3
+    mov     bh, TAB_BAR_X + 4
+    mov     bl, TAB_BAR_Y + 28
+l0: mov     cx, 12
+l1: vg_fbox bx, 16 by 16, 4 by 0
+    add     bh, 17
+    loop    l1
+    dec     dx
+    add     bl, 17
+    mov     bh, TAB_BAR_X + 4
+    cmp     dx, 0
+    jnz     l0
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _tb_viewer_draw                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_tb_viewer_draw:
+    vg_str  micro_font, up_arrow_char, 248 by TAB_BAR_Y + 14, 7 by 0, 1
+    vg_str  micro_font, down_arrow_char, 248 by 248, 7 by 0, 1
+    vg_str  micro_font, block_label, TAB_BAR_X + 4 by TAB_BAR_Y + 14, 7 by 0, 1
+    vg_str  micro_font, block_number, TAB_BAR_X + 48 by TAB_BAR_Y + 14, 7 by 0, 1
+    vg_str  micro_font, of_label, TAB_BAR_X + 66 by TAB_BAR_Y + 14, 7 by 0, 1
+    vg_str  micro_font, block_total_number, TAB_BAR_X + 84 by TAB_BAR_Y + 14, 7 by 0, 1
+    mov     bp, viewer_cb
+    cmp     w[bp], 0
+    jz      >l0
+    call    [bp]
+l0: ret
+
+tb_vwr macro
+    push    bp
+    call    _tb_viewer_draw
+    pop     bp
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -567,90 +745,8 @@ base_draw:
     vg_str  micro_font, tool_version, 16 by 8, 0 by 0, 0
     vg_str  micro_font, tool_version, 17 by 9, 7 by 0, 0
 
-    vg_hl   TAB_BAR_X by TAB_BAR_Y - 1, 218, 0 by 0
-    vg_fbox TAB_BAR_X by TAB_BAR_Y, 218 by TAB_BAR_H,8 by 0
-    vg_hl   TAB_BAR_X by TAB_BAR_B, 218, 0 by 0
-    vg_str  micro_font, banks_label, 2 by TAB_BAR_Y + 3, 7 by 0, 1
-
-    mov     cx, 4
-    mov     bh, TAB_BAR_X + 10
-    mov     bl, TAB_BAR_Y + 1
-l0: tb_draw bx
-    add     bh, 50
-    loop    l0
-
-    vg_str  micro_font, left_arrow_char, TAB_BAR_X + 2 by TAB_BAR_Y + 3, 7 by 0, 1
-    vg_str  micro_font, right_arrow_char, 248 by TAB_BAR_Y + 3, 7 by 0, 1
-    vg_str  micro_font, up_arrow_char, 248 by TAB_BAR_Y + 14, 7 by 0, 1
-    vg_str  micro_font, down_arrow_char, 248 by 248, 7 by 0, 1
-
-    vg_str  micro_font, block_label, TAB_BAR_X + 4 by TAB_BAR_Y + 14, 7 by 0, 1
-    vg_str  micro_font, block_number, TAB_BAR_X + 48 by TAB_BAR_Y + 14, 7 by 0, 1
-    vg_str  micro_font, of_label, TAB_BAR_X + 66 by TAB_BAR_Y + 14, 7 by 0, 1
-    vg_str  micro_font, block_total_number, TAB_BAR_X + 84 by TAB_BAR_Y + 14, 7 by 0, 1
-
-    vg_fbox 43 by 20, 128 by 128, 8 by 0
-    vg_box  42 by 20, 128 by 128, 0 by 0
-
-;#if TILES
-    ; tile selection grid example
-    mov     dx, 6
-    mov     bh, TAB_BAR_X + 4
-    mov     bl, TAB_BAR_Y + 26
-l2: mov     cx, 22
-l1: vg_fbox bx, 8 by 8, 4 by 0
-    add     bh, 9
-    loop    l1
-    dec     dx
-    add     bl, 9
-    mov     bh, TAB_BAR_X + 4
-    cmp     dx, 0
-    jnz     l2
-
-    ; drawing surface example
-    mov     dx, 8
-    mov     bh, 43
-    mov     bl, 21
-l4: mov     cx, 8
-l3: vg_fbox bx, 15 by 15, 3 by 0
-    add     bh, 16
-    loop    l3
-    add     bl, 16
-    mov     bh, 43
-    dec     dx
-    cmp     dx, 0
-    jnz     l4
-;#endif
-
-#if SPRS
-    ; sprite selection grid example
-    mov     dx, 3
-    mov     bh, TAB_BAR_X + 4
-    mov     bl, TAB_BAR_Y + 28
-l2: mov     cx, 12
-l1: vg_fbox bx, 16 by 16, 4 by 0
-    add     bh, 17
-    loop    l1
-    dec     dx
-    add     bl, 17
-    mov     bh, TAB_BAR_X + 4
-    cmp     dx, 0
-    jnz     l2
-
-    ; drawing surface example
-    mov     dx, 16
-    mov     bh, 43
-    mov     bl, 21
-l4: mov     cx, 16
-l3: vg_fbox bx, 7 by 7, 3 by 0
-    add     bh, 8
-    loop    l3
-    add     bl, 8
-    mov     bh, 43
-    dec     dx
-    cmp     dx, 0
-    jnz     l4
-#endif
+    tb_tabs
+    tb_vwr
 
     ret
 

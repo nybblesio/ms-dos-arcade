@@ -15,6 +15,7 @@
 F_BTN_NONE      equ 0000_0000_0000_0000xb
 F_BTN_VISIBLE   equ 0000_0000_0000_0001xb
 F_BTN_ENABLED   equ 0000_0000_0000_0010xb
+F_BTN_NODRAW    equ 0000_0000_0000_0100xb
 F_BTN_END       equ 1000_0000_0000_0000xb
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -119,13 +120,15 @@ l1: pop     ax
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _btns_draw:
 l0: cs mov  ax, btn_flags
-    test    ax, F_BTN_END
-    jz      >l1
-    ret
-l1: test    ax, F_BTN_VISIBLE
+    test    ax, F_BTN_NODRAW
+    jnz     >l3
+l1: test    ax, F_BTN_END
     jz      >l2
+    ret
+l2: test    ax, F_BTN_VISIBLE
+    jz      >l3
     call    _btn_draw
-l2: add     bp, type button
+l3: add     bp, type button
     jmp     l0
     ret
 

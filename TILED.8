@@ -1,0 +1,58 @@
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё banked                                            Ё
+;цддддддддддддддддддддддддддддддддддддддддддддддддддд╢
+;Ё                                                   Ё
+;Ё copyright (C) 2017 jeff panici                    Ё
+;Ё https://nybbles.io                                Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;Ё                                                   Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё constants                                         Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё variables                                         Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _tiled_draw                                       Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+_tiled_draw:
+    struc [bp]
+                    dw ?
+        te_pix_sz   dw ?
+        te_tile_sz  dw ?
+    ends
+
+    mov     bp, sp
+    vg_fbox 43 by 20, 128 by 128, 8 by 0
+    vg_box  42 by 20, 128 by 128, 0 by 0
+    mov     ax, te_pix_sz
+    mov     ah, al
+    mov     dx, te_tile_sz
+    mov     bh, 43
+    mov     bl, 21
+l0: mov     cx, te_tile_sz
+l1: vg_fbox bx, ax, 3 by 0
+    add     bh, ah
+    inc     bh
+    loop    l1
+    add     bl, al
+    inc     bl
+    mov     bh, 43
+    dec     dx
+    cmp     dx, 0
+    jnz     l0
+    ret
+
+te_draw macro
+    push    bp, ax, bx, cx, dx
+    push    #1, #2
+    call    _tiled_draw
+    add     sp, 4
+    pop     dx, cx, bx, ax, bp
+#em
+
