@@ -40,7 +40,7 @@ include tiled.8
 STATE_NO_FILE   equ 1
 STATE_NEW_FILE  equ 2
 STATE_LOAD_FILE equ 3
-STATE_NO_BANK   equ 4
+STATE_BANK      equ 4
 STATE_SPR_BANK  equ 5
 STATE_TILE_BANK equ 6
 STATE_PAL_BANK  equ 7
@@ -178,6 +178,11 @@ type_mod:
 
 type_name_lookup:
     dw      type_spr, type_tile, type_bg, type_font, type_pal, type_snd, type_mod
+
+exist_bank_msg1:
+    s$_def  'BANK FILE IS ALREADY ACTIVE'
+exist_bank_msg2:
+    s$_def  'DO YOU WANT TO START OVER?'
 
 buttons:
 btn_new:
@@ -352,8 +357,8 @@ new_file_state:
 load_file_state:
     st_def  STATE_LOAD_FILE, load_file_cb
 
-no_bank_state:
-    st_def  STATE_NO_BANK, no_bank_cb
+bank_state:
+    st_def  STATE_BANK, bank_cb
 
 tile_bank_state:
     st_def  STATE_TILE_BANK, tile_bank_cb
@@ -400,6 +405,7 @@ viewer_cb:      dw  0
 selected_tb     db  0
 pick_box_draw   db  0
 bank_start_off  dw  0
+bank_start_idx  db  0
 bank_prev_flag  db  0
 bank_next_flag  db  0
 
@@ -411,7 +417,7 @@ msgbox_show:
     cmp     al, 1
     je      >l0
     st_push msgbox_state
-    mov     b msgbox_enabled, 1
+    mov     b mb_enabled, 1
     bt_set  btn_ok, F_BTN_ENABLED or F_BTN_VISIBLE
     bt_set  btn_cancel, F_BTN_ENABLED or F_BTN_VISIBLE
 l0: ret
@@ -445,7 +451,17 @@ no_file_cb:
 ;³ new_file_cb                                       ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 new_file_cb:
-    tf_upd  text_fields
+    mb_chk
+    cmp     al, 1
+    jnz     >l0
+
+    ; if OK,  we need to do more work to reset state
+
+    st_pop
+    bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
+    tf_set  bank_file_field, F_TXT_READONLY
+    ret
+l0: tf_upd  text_fields
     mov     al, 1
     ret
 
@@ -458,10 +474,10 @@ load_file_cb:
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ enter_no_bank_state                               ³
+;³ enter_bank_state                                  ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-enter_no_bank_state:
-    st_push no_bank_state
+enter_bank_state:
+    st_push bank_state
     mov     selected_tb, 0
     bt_set  btn_add, F_BTN_ENABLED or F_BTN_VISIBLE
     ret
@@ -474,7 +490,7 @@ bank_fname_cb:
     je      >l0
     s$_cpy  bank_fname + 1, temp_fname + 1, 12
     st_pop
-    call    enter_no_bank_state
+    call    enter_bank_state
     bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
     ret
 l0: bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
@@ -482,9 +498,9 @@ l0: bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ no_bank_cb                                        ³
+;³ bank_cb                                           ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-no_bank_cb:
+bank_cb:
     bt_fire mouse_data, buttons
     mov     al, 0
     ret
@@ -538,44 +554,57 @@ exit_cb:
 ;³ btn_tab1_cb                                       ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_tab1_cb:
-    push    bp
-    mov     selected_tb, 1
+    push    bp, bx
+    mov     bl, 1
+    add     bl, bank_start_idx
+    mov     selected_tb, bl
     mov     bp, viewer_cb
     mov     w[bp], tile_viewer_cb
-    pop     bp
+    pop     bx, bp
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_tab2_cb                                       ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_tab2_cb:
-    push    bp
-    mov     selected_tb, 2
+    push    bp, bx
+    mov     bl, 2
+    add     bl, bank_start_idx
+    mov     selected_tb, bl
     mov     bp, viewer_cb
     mov     w[bp], spr_viewer_cb
-    pop     bp
+    pop     bx, bp
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_tab3_cb                                       ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_tab3_cb:
-    mov     selected_tb, 3
+    push    bp, bx
+    mov     bl, 3
+    add     bl, bank_start_idx
+    mov     selected_tb, bl
+    pop     bx, bp
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_tab4_cb                                       ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_tab4_cb:
-    mov     selected_tb, 4
+    push    bp, bx
+    mov     bl, 4
+    add     bl, bank_start_idx
+    mov     selected_tb, bl
+    pop     bx, bp
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_ok_cb                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_ok_cb:
-    mov     al, 1
-    mov     msgbox_enabled, 0
+    mov     b mb_enabled, 0
+    mov     b mb_action_flag, 1
+    mov     b mb_result, 1
     bt_set  btn_ok, F_BTN_NONE
     bt_set  btn_cancel, F_BTN_NONE
     st_pop
@@ -586,7 +615,9 @@ btn_ok_cb:
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_cancel_cb:
     mov     al, 0
-    mov     msgbox_enabled, 0
+    mov     b mb_enabled, 0
+    mov     b mb_action_flag, 1
+    mov     b mb_result, 0
     bt_set  btn_ok, F_BTN_NONE
     bt_set  btn_cancel, F_BTN_NONE
     st_pop
@@ -596,13 +627,29 @@ btn_cancel_cb:
 ;³ btn_new_cb                                        ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_new_cb:
+    push    bp
     bt_set  btn_new, F_BTN_VISIBLE
+    st_chk  STATE_BANK
+    push    ax
     st_push new_file_state
-    mov     bp, bank_file_field
-    mov     txt_flags, F_TXT_EDIT
+    tf_set  bank_file_field, F_TXT_EDIT
+    tf_load bank_file_field
     xor     bx, bx
     mov     bl, txt_char_idx
     call    txt_end
+    pop     ax
+    cmp     al, 1
+    jnz     >l0
+    xor     cx, cx
+    mov     bp, exist_bank_msg1
+    mov     cl, b[bp]
+    s$_cpy  msgbox_line3 + 1, exist_bank_msg1 + 1, cx
+    mov     bp, exist_bank_msg2
+    mov     cl, b[bp]
+    s$_cpy  msgbox_line4 + 1, exist_bank_msg2 + 1, cx
+    pop     bp
+    call    msgbox_show
+l0: pop     bp
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -706,6 +753,7 @@ bank_prev:
     jz      >l0
     sub     ax, type bank_block
     mov     bank_start_off, ax
+    dec     bank_start_idx
 l0: pop     ax
     ret
     ret
@@ -729,6 +777,7 @@ bank_next:
     jae     >l0
     add     ax, type bank_block
     mov     bank_start_off, ax
+    inc     bank_start_idx
 l0: pop     bx, ax
     ret
 
@@ -848,6 +897,7 @@ _tb_tab_draw:
     mov     ax, [bp + 4]
     mov     bx, [bp + 6]
     pop     bp
+    add     al, bank_start_idx
     cmp     al, selected_tb
     setz    al
     mov     dx, 1 by 0  ; dark blue background

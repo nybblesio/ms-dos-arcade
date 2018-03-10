@@ -45,6 +45,17 @@ tf_def macro
     dw #2, #3, #4, #5
 #em
 
+tf_set macro
+    push    bp
+    mov     bp, #1
+    mov     txt_flags, #2
+    pop     bp
+#em
+
+tf_load macro
+    mov     bp, #1
+#em
+
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
 ;Ё txt_find_key                                      Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды

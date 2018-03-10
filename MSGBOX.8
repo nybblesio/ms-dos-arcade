@@ -12,13 +12,15 @@
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ variables                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-msgbox_enabled      db      0
+mb_enabled      db  0
+mb_action_flag  db  0
+mb_result       db  0
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ msgbox_draw                                       ³
+;³ mb_draw                                           ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-msgbox_draw:
-    cmp     msgbox_enabled, 1
+_mb_draw:
+    cmp     mb_enabled, 1
     je      >l0
     ret
 l0: vg_fbox 50 by 33, 196 by 85, 8 by 0
@@ -42,6 +44,19 @@ l3: vg_str  micro_font, bp, bx, 7 by 0, 1
 
 mb_draw macro
     push    bp, ax, bx, cx, dx
-    call    msgbox_draw
+    call    _mb_draw
     pop     dx, cx, bx, ax, bp
+#em
+
+mb_chk macro
+    mov     al, 0
+    cmp     mb_action_flag, 1
+    jnz     >m1
+m0: mov     al, 1
+    mov     mb_action_flag, 0
+    cmp     mb_result, 1
+    jnz     >m1
+    mov     mb_result, 0
+    mov     al, 2
+m1:
 #em

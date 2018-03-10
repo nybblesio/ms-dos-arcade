@@ -33,28 +33,33 @@
 บ TASKS                                                                   บ
 ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
 
-- banked.8: wire up NEW
-          : wire up LOAD
-          : wire up SAVE
-          : wire up new BANK
+- keyboard shortcuts for bank scrolling/bank selection
 
-- file.8: add table of error messages and a way to look them up
+- wire up bank selection to editor state
+
+- wire up grid-based selection via mouse
 
 - keyboard interface for block scrolling
 
-- keyboard interface for bank selection/scrolling
+- wire up load
+
+- wire up save
+
+- wire up clear bank
+
+- wire up remove bank
+    - write to temp file
+    - reset state
+    - load temp file
+    - delete temp file
+
+- wire up props for bank
+
+- add function to get current -or- new data block for bank
+
+- file.8: add table of error messages and a way to look them up
 
 - keyboard interface for sprite/tile/font editor
-
-- create new structure for grid-based mouse selection
-    - if mouse is within bounds, pick proper row/column based on config
-    - click detection
-
-
-- bank.8: determine how errors will work going back to BANKED & game
-        : finish load & save
-        : add function to get current -or- new data block for bank
-
 
 - number fields: left/right buttons for increment/decrement
 
@@ -81,3 +86,7 @@
 - mouse.8 : drawing mouse cursor not clipping
 - change bank interface to allow specifying max number of blocks when
   creating new bank
+- banked.8: wire up NEW
+          : wire up new BANK
+- fix bank selection w/scroll
+- pop up msgbox when trying to create a new bank over an existing one
