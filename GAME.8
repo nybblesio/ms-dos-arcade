@@ -35,7 +35,6 @@ state               db      ?
 fps                 db      ?
 exit_code           db      ?
 temp_ptr            dw      ?
-draw_flag           db      ?
 
 frame_rate:         s$_def  '00'
 game_title:         s$_def  'LUMBERJACKS'
@@ -161,12 +160,9 @@ init:
     call    io_init
     call    tm_init
     sn_init
-
     vg_lspr 0
     vg_sspr 0, 0, 100, 10, F_SPR_ENABLED, 0
-
-    tm_new  offset fps_timer, 60
-
+    tm_new  fps_timer, 60
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -191,10 +187,6 @@ draw_title:
 ;³ draw                                              ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 draw:
-    cs cmp  draw_flag, 1
-    je      >l0
-    ret
-l0: cs mov  draw_flag, 0
     vg_bg1
     vg_fg
     vg_bg2
@@ -208,16 +200,12 @@ l0: cs mov  draw_flag, 0
 ;³ show                                              ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 show:
-    sc_isvb
-    cmp     al, 0
-    jnz     >l0
-    ret
-l0: vg_flip
-    sc_wnvb
-    in_upd  input_events
-    in_fire input_bindings
+    vg_flip
     cs inc  fps
-    cs mov  draw_flag, 1
+    cs cmp  fps, 99
+    ja      >l1
+    ret
+l1: cs mov  fps, 99
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -231,6 +219,8 @@ start:
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 game_loop:
     tm_fire
+    in_upd  input_events
+    in_fire input_bindings
     cs call draw
     cs call show
     jmp     game_loop

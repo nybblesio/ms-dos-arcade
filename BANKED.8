@@ -391,7 +391,6 @@ bank_fname:
 
 fps         db  ?
 exit_code   db  ?
-draw_flag   db  ?
 temp_ptr    dw  ?
 mouse_data: dw  2 dup (?)
 viewer_cb:  dw  0
@@ -892,38 +891,28 @@ base_draw:
 ;³ draw                                              ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 draw:
-    cmp     draw_flag, 1
-    je      >l0
-    ret
-
-l0: mov     draw_flag, 0
     vg_clr
     call    base_draw
     tf_draw text_fields
     cu_draw
     mb_draw
     bt_draw buttons
-
-l5:
+    mo_draw mouse_data, cursor_pointer2
 #if DEBUG
     vg_str  micro_font, frame_rate, 2 by 250, 0 by 0, 1
 #endif
-    mo_draw mouse_data, cursor_pointer2
-
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ show                                              ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 show:
-    sc_isvb
-    cmp     al, 0
-    jnz     >l0
-    ret
-l0: vg_flip
-    sc_wnvb
+    vg_flip
     cs inc  fps
-    cs mov  draw_flag, 1
+    cs cmp  fps, 99
+    ja      >l1
+    ret
+l1: cs mov  fps, 99
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -961,7 +950,7 @@ init:
     call    io_init
     call    tm_init
     call    cu_init
-    tm_new  offset fps_timer, 60
+    tm_new  fps_timer, 60
     st_push no_file_state
     ret
 

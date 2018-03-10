@@ -30,6 +30,12 @@ s$_resv macro
 #em
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё variables                                         Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+hex_chars:
+    db  '0123456789ABCDEF'
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
 ;Ё _s$_cpy                                           Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 _s$_cpy:
@@ -94,21 +100,15 @@ l0: xchg    ax, dx
 ;Ё s$_hex2                                           Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 s$_hex2:
-    push    es, ax
-    aam     16
-    xchg    al, ah
-    add     al, 090h
-    daa
-    adc     al, 040h
-    daa
-    stosb
-    inc     di
-    xchg    al, ah
-    add     al, 090h
-    daa
-    adc     al, 040h
-    daa
-    stosb
-    inc     di
-    pop     ax, es
+    push    bx
+    lea     bx, hex_chars
+    mov     ah, al
+    shr     ah, 4
+    and     al, 0fh
+    xlat
+    xchg    ah, al
+    xlat
+    xchg    ah, al
+    mov     [di], ax
+    pop     bx
     ret

@@ -21,12 +21,13 @@ BANK_TYPE_TILE      equ 2
 BANK_TYPE_BG        equ 3
 BANK_TYPE_FONT      equ 4
 
-
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ structures                                        ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 bank_header struc [bp]
     hdr_magick      dw  ?
+    hdr_version     db  ?
+    hdr_revision    db  ?
     hdr_block_sz    dw  ?
 ends
 
@@ -71,6 +72,8 @@ bank_hdrs_off       dw  ?
 
 bank_file_header:
     db  'BANK'
+    db  1
+    db  0
     dw  type bank_block
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -78,6 +81,14 @@ bank_file_header:
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 bk_init:
     mm_resv SZ_BANK_HDRS_PARA, offset bank_hdrs_seg
+    mm_set  bank_hdrs_seg, 0, SZ_BANK_HDRS, 0
+    mov     bank_hdrs_off, 0
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ bk_reset                                          ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+bk_reset:
     mm_set  bank_hdrs_seg, 0, SZ_BANK_HDRS, 0
     mov     bank_hdrs_off, 0
     ret
@@ -111,18 +122,33 @@ bank_find macro
 ;³ _bank_new                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _bank_new:
+    struc [bp]
+                    dw ?
+        bk_blk_max  db ?
+        bk_type     db ?
+    ends
+
     mov     bp, sp
-    mov     bx, [bp]
+    mov     bh, bk_type
+    mov     bl, bk_blk_max
     cs mov  es, bank_hdrs_seg
     mov     bp, bank_hdrs_off
-    mm_resv SZ_BANK_BLK_PARA, ax
+    xor     ax, ax
+    mov     al, bl
+    mov     cx, type bank_block
+    mul     cx
+    mov     cx, 16
+    div     cx
+    mov     cx, ax
+    mm_resv cx, ax
     mov     md_blk_seg, ax
     mov     md_blk_off, 0
+    mov     md_blk_max, bl
     mov     cl, bank_hdr_id
     mov     md_id, cl
     inc     cl
     mov     bank_hdr_id, cl
-    mov     md_type, bl
+    mov     md_type, bh
     mov     md_flags, F_BANK_BLOCK_DIRTY
     mov     ax, bp
     add     bp, type bank_block
@@ -130,9 +156,10 @@ _bank_new:
     ret
 
 bank_new macro
-    push    bp, cx, bx, #1  ; bank type byte
+    push    bp, cx, bx
+    push    #2 by #1
     call    _bank_new
-    add     sp, 2
+    add     sp, 4
     pop     bx, cx, bp
 #em
 
