@@ -57,3 +57,18 @@ setnz macro
 m0: mov     #1, 1
 m1:
 #em
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё xlatw                                             Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+xlatw macro
+    push    ax, bx
+    xor     ah, ah
+    mov     al, #1
+    shl     al, 1
+    mov     bx, #2
+    add     bx, ax
+    mov     si, [bx]
+    pop     bx, ax
+#em
+

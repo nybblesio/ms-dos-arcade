@@ -20,12 +20,15 @@ BANK_TYPE_SPR       equ 1
 BANK_TYPE_TILE      equ 2
 BANK_TYPE_BG        equ 3
 BANK_TYPE_FONT      equ 4
+BANK_TYPE_PAL       equ 5
+BANK_TYPE_SND       equ 6
+BANK_TYPE_MOD       equ 7
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ structures                                        ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 bank_header struc [bp]
-    hdr_magick      dw  ?
+    hdr_magick      db  4 dup(?)
     hdr_version     db  ?
     hdr_revision    db  ?
     hdr_block_sz    dw  ?
@@ -69,6 +72,7 @@ even
 bank_hdr_id         db  1
 bank_hdrs_seg       dw  ?
 bank_hdrs_off       dw  ?
+bank_temp_ptr       dw  ?
 
 bank_file_header:
     db  'BANK'
@@ -94,6 +98,14 @@ bk_reset:
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ bk_ptr                                            ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+bk_ptr macro
+    cs mov  es, bank_hdrs_seg
+    cs mov  bp, 0
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ _bank_find                                        ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _bank_find:
@@ -111,7 +123,7 @@ l0: cmp     bp, bank_hdrs_off
 l1: mov     ax, bp
     ret
 
-bank_find macro
+bk_find macro
     push    bp, es, cx, #1
     call    _bank_find
     add     sp, 4
@@ -139,32 +151,37 @@ _bank_new:
     mul     cx
     mov     cx, 16
     div     cx
+    inc     ax
     mov     cx, ax
-    mm_resv cx, ax
-    mov     md_blk_seg, ax
-    mov     md_blk_off, 0
-    mov     md_blk_max, bl
-    mov     cl, bank_hdr_id
-    mov     md_id, cl
+    mm_resv cx, offset bank_temp_ptr
+    cs mov  ax, bank_temp_ptr
+    mm_set  ax, 0, cx, 0
+    es mov  md_blk_seg, ax
+    es mov  md_blk_off, 0
+    es mov  md_blk_max, bl
+    cs mov  cl, bank_hdr_id
+    es mov  md_id, cl
     inc     cl
-    mov     bank_hdr_id, cl
-    mov     md_type, bh
-    mov     md_flags, F_BANK_BLOCK_DIRTY
-    mov     ax, bp
-    add     bp, type bank_block
+    cs mov  bank_hdr_id, cl
+    es mov  md_type, bh
+    es mov  md_flags, F_BANK_BLOCK_DIRTY
+    cs mov  ax, bp
+    cmp     bp, SZ_BANK_HDRS
+    jae     >l0
+    cs add  bp, type bank_block
     cs mov  bank_hdrs_off, bp
-    ret
+l0: ret
 
-bank_new macro
+bk_new macro
     push    bp, cx, bx
-    push    #2 by #1
+    push    #1 by #2
     call    _bank_new
     add     sp, 4
     pop     bx, cx, bp
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ _bank_file_create                                 ³
+;³ _bk_file_create                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _bank_file_create:
     mov     bp, sp
@@ -178,7 +195,7 @@ l1: ; handle error
     ; pointer to error string in file?
     ret
 
-bank_file_create macro
+bk_file macro
     push    bp, #1
     call    _bank_file_create
     add     sp, 2
@@ -186,10 +203,10 @@ bank_file_create macro
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ _bank_file_save                                   ³
+;³ _bk_file_save                                     ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 ; use in banked
-_bank_file_save:
+_bk_file_save:
     ; 1. create temp file via _bank_file_create
     ; 2. walk each header block, skipping deleted
     ;   2a. write header block
@@ -198,8 +215,13 @@ _bank_file_save:
     ; 4. rename temp to proper filename
     ret
 
-; use in banked
-_bank_file_load:
+bk_save macro
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _bk_file_load                                     ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_bk_file_load:
     ; 1. open file via file_open
     ; 2. read each block
     ;   2a. if header, fill in at bank_hdrs_off
@@ -207,8 +229,11 @@ _bank_file_load:
     ; 3. close file
     ret
 
+bk_load macro
+#em
+
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ _bank_file_load_data                              ³
+;³ _bk_file_load_data                                ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 ; use from game engine
 ; params:
@@ -217,5 +242,9 @@ _bank_file_load:
 ;   - bank id
 ;   - dest buffer
 ;
-_bank_file_load_data:
+_bk_file_load_data:
     ret
+
+bk_data macro
+#em
+

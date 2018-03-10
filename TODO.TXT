@@ -33,10 +33,12 @@
 บ TASKS                                                                   บ
 ศอออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออออผ
 
-- file.8: add table of error messages and a way to look them up
+- banked.8: wire up NEW
+          : wire up LOAD
+          : wire up SAVE
+          : wire up new BANK
 
-- change bank interface to allow specifying max number of blocks when
-  creating new bank
+- file.8: add table of error messages and a way to look them up
 
 - keyboard interface for block scrolling
 
@@ -53,10 +55,6 @@
         : finish load & save
         : add function to get current -or- new data block for bank
 
-- banked.8: wire up NEW
-          : wire up LOAD
-          : wire up SAVE
-          : wire up new BANK
 
 - number fields: left/right buttons for increment/decrement
 
@@ -81,3 +79,5 @@
     - flag for render just the text
 - pick bank type UI small pop-up like window with buttons
 - mouse.8 : drawing mouse cursor not clipping
+- change bank interface to allow specifying max number of blocks when
+  creating new bank

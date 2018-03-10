@@ -10,23 +10,6 @@
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ structures                                        ³
-;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-struc [bp]
-                    dw  ?
-    alloc_para_n    dw  ?
-    alloc_seg_var   dw  ?
-ends
-
-struc [bp]
-                    dw  ?
-    memset_seg      dw  ?
-    memset_offset   dw  ?
-    memset_size     dw  ?
-    memset_value    dw  ?
-ends
-
-;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ variables                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 start_seg_addr  dw  ?
@@ -66,16 +49,24 @@ mm_clr macro
 ;³ _alloc                                            ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _alloc:
+    struc [bp]
+                        dw  ?
+        alloc_para_n    dw  ?
+        alloc_seg_var   dw  ?
+    ends
+
     mov     bp, sp
     mov     ax, free_seg_addr
     add     ax, alloc_para_n
+    add     ax, 16
     mov     free_seg_addr, ax
     mov     di, alloc_seg_var
     mov     [di], ax
     ret
 
 mm_resv macro
-    push    bp, ax, bx, di, #2, #1
+    push    bp, ax, bx, di
+    push    #2, #1
     call    _alloc
     add     sp, 4
     pop     di, bx, ax, bp
@@ -85,6 +76,14 @@ mm_resv macro
 ;³ _memset                                           ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _memset:
+    struc [bp]
+                        dw  ?
+        memset_seg      dw  ?
+        memset_offset   dw  ?
+        memset_size     dw  ?
+        memset_value    dw  ?
+    ends
+
     mov     bp, sp
     mov     es, memset_seg
     mov     di, memset_offset

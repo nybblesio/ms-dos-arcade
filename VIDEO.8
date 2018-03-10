@@ -223,11 +223,11 @@ c5: pop     dx, cx, bx
     ret
 
 vg_str macro
-    push    bp, si, di, ax, bx, cx, dx
+    push    es, bp, si, di, ax, bx, cx, dx
     push    #5, #4, #3, #2, #1
     call    _string
     add     sp, 10
-    pop     dx, cx, bx, ax, di, si, bp
+    pop     dx, cx, bx, ax, di, si, bp, es
 #em
 
 ;旼컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴�
@@ -236,7 +236,7 @@ vg_str macro
 clear_page:
     cs mov  es, back_buffer_ptr
     mov     di, 0
-    mov     cx, (SZ_VRAM / 2) + 2
+    mov     cx, 32767
     mov     ax, 07f7fh
     cld
     es rep  stosw
@@ -569,11 +569,11 @@ l1: es mov  [bx], dl
     ret
 
 vg_box macro
-    push    bp, bx, cx, dx
+    push    es, bp, bx, cx, dx
     push    #3, #2, #1
     call    _rect
     add     sp, 6
-    pop     dx, cx, bx, bp
+    pop     dx, cx, bx, bp, es
 #em
 
 ;旼컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴컴�
@@ -613,11 +613,11 @@ l0: es mov  [bx], al
     ret
 
 vg_fbox macro
-    push    bp, ax, bx, cx
+    push    es, bp, ax, bx, cx
     push    #3, #2, #1
     call    _frect
     add     sp, 6
-    pop     cx, bx, ax, bp
+    pop     cx, bx, ax, bp, es
 #em
 
 

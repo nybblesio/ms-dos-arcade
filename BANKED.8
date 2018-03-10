@@ -128,7 +128,7 @@ msgbox_title:
 pick_type_title:
     s$_def  'PICK'
 
-test_label:
+tab_label:
     s$_def  '00:TILE'
 
 block_label:
@@ -159,22 +159,25 @@ type_tile:
     s$_def  'TILE'
 
 type_spr:
-    s$_def  'SPR'
+    s$_def  'SPR '
 
 type_font:
     s$_def  'FONT'
 
 type_bg:
-    s$_def  'BG'
+    s$_def  'BG  '
 
 type_pal:
-    s$_def  'PAL'
+    s$_def  'PAL '
 
 type_snd:
-    s$_def  'SND'
+    s$_def  'SND '
 
 type_mod:
-    s$_def  'MOD'
+    s$_def  'MOD '
+
+type_name_lookup:
+    dw      type_spr, type_tile, type_bg, type_font, type_pal, type_snd, type_mod
 
 buttons:
 btn_new:
@@ -226,16 +229,16 @@ btn_tab4:
     bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 160 by TAB_BAR_Y + 1, 48 by 9, 9 by 0, 0 by 0, btn_tab4_cb
 
 btn_bank_prev:
-    bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, left_arrow_char, TAB_BAR_X + 2 by TAB_BAR_Y + 3, 0, 6 by 6, 0, 0, btn_bank_prev_cb
+    bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, left_arrow_char, TAB_BAR_X + 2 by TAB_BAR_Y + 3, TAB_BAR_X + 2 by TAB_BAR_Y + 3, 6 by 6, 0, 0, btn_bank_prev_cb
 
 btn_bank_next:
-    bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, right_arrow_char, 248 by TAB_BAR_Y + 3, 0, 6 by 6, 0, 0, btn_bank_next_cb
+    bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, right_arrow_char, 248 by TAB_BAR_Y + 3, 248 by TAB_BAR_Y + 3, 6 by 6, 0, 0, btn_bank_next_cb
 
 btn_block_prev:
-    bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, up_arrow_char, 248 by TAB_BAR_Y + 14, 0, 6 by 6, 0, 0, btn_block_prev_cb
+    bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, up_arrow_char, 248 by TAB_BAR_Y + 14, 248 by TAB_BAR_Y + 14, 6 by 6, 0, 0, btn_block_prev_cb
 
 btn_block_next:
-    bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, down_arrow_char, 248 by 248, 0, 6 by 6, 0, 0, btn_block_next_cb
+    bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, down_arrow_char, 248 by 248, 248 by 248, 6 by 6, 0, 0, btn_block_next_cb
 
 btn_type_tile:
     bt_def F_BTN_NONE, type_tile, PICK_BOX_MX + 4 by PICK_BOX_MY + 2, PICK_BOX_MX by PICK_BOX_MY, 28 by 8, 9 by 0, 0 by 0, btn_type_tile_cb
@@ -387,14 +390,18 @@ temp_fname:
     s$_resv     12
 
 bank_fname:
-    filename    '            '
+    fnameresv   12
 
-fps         db  ?
-exit_code   db  ?
-temp_ptr    dw  ?
-mouse_data: dw  2 dup (?)
-viewer_cb:  dw  0
-selected_tb db  0
+fps             db  ?
+exit_code       db  ?
+temp_ptr        dw  ?
+mouse_data:     dw  2 dup (?)
+viewer_cb:      dw  0
+selected_tb     db  0
+pick_box_draw   db  0
+bank_start_off  dw  0
+bank_prev_flag  db  0
+bank_next_flag  db  0
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ msgbox_show                                       ³
@@ -451,29 +458,35 @@ load_file_cb:
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ enter_no_bank_state                               ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+enter_no_bank_state:
+    st_push no_bank_state
+    mov     selected_tb, 0
+    bt_set  btn_add, F_BTN_ENABLED or F_BTN_VISIBLE
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ bank_fname_cb                                     ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 bank_fname_cb:
     cmp     al, 0
-    je      >l1
-
-    ; filename can't be empty
-    ; enforce .bnk extension
-
-
-l1: bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
-    push    bp
-    st_top
-    cmp     st_code, STATE_NEW_FILE
-    jne     >l0
+    je      >l0
+    s$_cpy  bank_fname + 1, temp_fname + 1, 12
     st_pop
-l0: pop     bp
+    call    enter_no_bank_state
+    bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
+    ret
+l0: bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
+    st_pop
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ no_bank_cb                                        ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 no_bank_cb:
+    bt_fire mouse_data, buttons
+    mov     al, 0
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -607,9 +620,50 @@ btn_save_cb:
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ pick_box_hide                                     ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+pick_box_hide:
+    mov     b pick_box_draw, 0
+    bt_set  btn_type_tile, F_BTN_NONE
+    bt_set  btn_type_spr, F_BTN_NONE
+    bt_set  btn_type_font, F_BTN_NONE
+    bt_set  btn_type_pal, F_BTN_NONE
+    bt_set  btn_type_bg, F_BTN_NONE
+    bt_set  btn_type_snd, F_BTN_NONE
+    bt_set  btn_type_mod, F_BTN_NONE
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ pick_box_show                                     ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+pick_box_show:
+    mov     b pick_box_draw, 1
+    bt_set  btn_type_tile, F_BTN_VISIBLE or F_BTN_ENABLED
+    bt_set  btn_type_spr, F_BTN_VISIBLE or F_BTN_ENABLED
+    bt_set  btn_type_font, F_BTN_VISIBLE or F_BTN_ENABLED
+    bt_set  btn_type_pal, F_BTN_VISIBLE or F_BTN_ENABLED
+    bt_set  btn_type_bg, F_BTN_VISIBLE or F_BTN_ENABLED
+    bt_set  btn_type_snd, F_BTN_VISIBLE or F_BTN_ENABLED
+    bt_set  btn_type_mod, F_BTN_VISIBLE or F_BTN_ENABLED
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_add_limit                                     ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_add_limit:
+    push    ax
+    mov     ax, bank_hdrs_off
+    cmp     ax, type bank_block * 14
+    jb      >l0
+    bt_set  btn_add, F_BTN_VISIBLE
+l0: pop     ax
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_add_bank_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_add_bank_cb:
+    call    pick_box_show
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -643,15 +697,46 @@ btn_tileset_cb:
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ bank_prev                                         ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+bank_prev:
+    push    ax
+    mov     ax, bank_start_off
+    cmp     ax, 0
+    jz      >l0
+    sub     ax, type bank_block
+    mov     bank_start_off, ax
+l0: pop     ax
+    ret
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_bank_prev_cb                                  ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_bank_prev_cb:
+    mov     bank_prev_flag, 1
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ bank_next                                         ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+bank_next:
+    push    ax, bx
+    mov     ax, bank_start_off
+    mov     bx, bank_hdrs_off
+    sub     bx, type bank_block
+    cmp     ax, bx
+    jae     >l0
+    add     ax, type bank_block
+    mov     bank_start_off, ax
+l0: pop     bx, ax
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_bank_next_cb                                  ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_bank_next_cb:
+    mov     bank_next_flag, 1
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -670,42 +755,70 @@ btn_block_next_cb:
 ;³ btn_type_tile_cb                                  ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_tile_cb:
+    call    pick_box_hide
+    bk_new  BANK_TYPE_TILE, 16
+    call    btn_add_limit
+    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_spr_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_spr_cb:
+    call    pick_box_hide
+    bk_new  BANK_TYPE_SPR, 16
+    call    btn_add_limit
+    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_font_cb                                  ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_font_cb:
+    call    pick_box_hide
+    bk_new  BANK_TYPE_FONT, 2
+    call    btn_add_limit
+    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_bg_cb                                    ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_bg_cb:
+    call    pick_box_hide
+    bk_new  BANK_TYPE_BG, 2
+    call    btn_add_limit
+    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_pal_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_pal_cb:
+    call    pick_box_hide
+    bk_new  BANK_TYPE_PAL, 2
+    call    btn_add_limit
+    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_snd_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_snd_cb:
+    call    pick_box_hide
+    bk_new  BANK_TYPE_SND, 16
+    call    btn_add_limit
+    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_mod_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_mod_cb:
+    call    pick_box_hide
+    bk_new  BANK_TYPE_MOD, 16
+    call    btn_add_limit
+    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -715,9 +828,9 @@ btn_exit_cb:
     jmp     exit_cb
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ fps_timer                                         ³
+;³ tm_fps                                            ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-fps_timer:
+tm_fps:
     tm_clr
     mov     di, frame_rate + 1
     xor     ax, ax
@@ -730,16 +843,18 @@ fps_timer:
 ;³ _tb_tab_draw                                      ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _tb_tab_draw:
+    push    bp
     mov     bp, sp
-    mov     ax, [bp + 2]
+    mov     ax, [bp + 4]
+    mov     bx, [bp + 6]
+    pop     bp
     cmp     al, selected_tb
     setz    al
     mov     dx, 1 by 0  ; dark blue background
     cmp     al, 1
     jnz     >l0
     mov     dx, 9 by 0  ; purple-ish background
-l0: mov     bx, [bp + 4]
-    inc     bh
+l0: inc     bh
     vg_fbox bx, 45 by 9, dx
     vg_hl   bx, 45, 0 by 0
     dec     bh
@@ -751,7 +866,15 @@ l0: mov     bx, [bp + 4]
     cmp     al, 1
     jnz     >l1
     mov     dx, 7 by 0
-l1: vg_str  micro_font, test_label, bx, dx, 1
+l1: es mov  al, md_id
+    cs mov  di, tab_label + 1
+    call    s$_dec2
+    es mov  al, md_type
+    dec     al
+    xlatw   al, type_name_lookup
+    inc     si
+    s$_cpy  tab_label + 4, si, 4
+    vg_str  micro_font, tab_label, bx, dx, 1
     add     bh, 44
     sub     bl, 2
     vg_vl   bx, 9, 0 by 0
@@ -779,21 +902,30 @@ _tb_bar_draw:
 ;³ _tb_tabs_draw                                     ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _tb_tabs_draw:
+    cs cmp  bank_hdrs_off, 5 * type bank_block
+    jb      >l0
+    bt_set  btn_bank_prev, F_BTN_TXTONLY or F_BTN_VISIBLE or F_BTN_ENABLED
+    bt_set  btn_bank_next, F_BTN_TXTONLY or F_BTN_VISIBLE or F_BTN_ENABLED
+l0: bk_ptr
+    mov     bp, bank_start_off
     mov     ax, 1
-    mov     cx, 4
     mov     bh, TAB_BAR_X + 10
     mov     bl, TAB_BAR_Y + 1
-l0: tb_draw bx, ax
+    mov     cx, 4
+l1: es cmp  md_id, 0
+    jz      >l2
+    tb_draw bx, ax
     inc     ax
     add     bh, 50
-    loop    l0
-    ret
+    add     bp, type bank_block
+    loop    l1
+l2: ret
 
 tb_tabs macro
-    push    ax, cx, bx
+    push    es, ax, cx, bx
     call    _tb_bar_draw
     call    _tb_tabs_draw
-    pop     bx, cx, ax
+    pop     bx, cx, ax, es
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -885,7 +1017,11 @@ base_draw:
     tb_tabs
     tb_vwr
 
-    ret
+    cmp     b pick_box_draw, 1
+    jnz     >l0
+    pb_draw
+
+l0: ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ draw                                              ³
@@ -921,21 +1057,25 @@ l1: cs mov  fps, 99
 allocate:
     mm_resv SZ_CTRL_RAM / 16,  offset ctrl_ram_ptr
     mm_set  ctrl_ram_ptr, 0, SZ_CTRL_RAM, 0
-
-    mov     es, ctrl_ram_ptr
-    mov     bp, 0
-
-    mm_resv SZ_TILE_BANK / 16, offset temp_ptr
-    mm_set  temp_ptr, 0, SZ_TILE_BANK, 024h
-    es_movm c_bg_tiles, temp_ptr
-
-    mm_resv SZ_TILE_BANK / 16, offset temp_ptr
-    mm_set  temp_ptr,   0, SZ_TILE_BANK, 07fh
-    es_movm c_spr_tiles, temp_ptr
-
     mm_resv SZ_VRAM / 16, offset back_buffer_ptr
     mm_set  back_buffer_ptr, 0, SZ_VRAM, 0
+    ret
 
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ tm_bk_scroll                                      ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+tm_bk_scroll:
+    tm_clr
+    cmp     bank_next_flag, 1
+    jz      >l0
+    cmp     bank_prev_flag, 1
+    jz      >l1
+    ret
+l0: call    bank_next
+    jmp     >l2
+l1: call    bank_prev
+l2: mov     bank_next_flag, 0
+    mov     bank_prev_flag, 0
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -950,7 +1090,8 @@ init:
     call    io_init
     call    tm_init
     call    cu_init
-    tm_new  fps_timer, 60
+    tm_new  tm_fps, 60
+    tm_new  tm_bk_scroll, 6
     st_push no_file_state
     ret
 
