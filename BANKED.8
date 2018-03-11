@@ -37,26 +37,26 @@ include tiled.8
 ;³ constants                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
-STATE_NO_FILE   equ 1
-STATE_NEW_FILE  equ 2
-STATE_LOAD_FILE equ 3
-STATE_BANK      equ 4
-STATE_SPR_BANK  equ 5
-STATE_TILE_BANK equ 6
-STATE_PAL_BANK  equ 7
-STATE_BG_BANK   equ 8
-STATE_FONT_BANK equ 9
-STATE_MSGBOX    equ 10
+ST_NO_FILE   equ 1
+ST_NEW_FILE  equ 2
+ST_LOAD_FILE equ 3
+ST_BANK      equ 4
+ST_SPR_BANK  equ 5
+ST_TILE_BANK equ 6
+ST_PAL_BANK  equ 7
+ST_BG_BANK   equ 8
+ST_FONT_BANK equ 9
+ST_MSGBOX    equ 10
 
 TAB_BAR_X equ 38
 TAB_BAR_Y equ 160
 TAB_BAR_H equ 10
 TAB_BAR_B equ TAB_BAR_Y + TAB_BAR_H
 
-PICK_BOX_Y equ TAB_BAR_B - 2
-PICK_BOX_X equ 40
-PICK_BOX_MY equ PICK_BOX_Y + 12
-PICK_BOX_MX equ PICK_BOX_X + 4
+PB_Y equ TAB_BAR_B - 2
+PB_X equ 40
+PB_MY equ PB_Y + 12
+PB_MX equ PB_X + 4
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ structures & variables                            ³
@@ -67,9 +67,6 @@ frame_rate:
 
 file_label:
     s$_def  'BANK FILE:'
-
-editor_label:
-    s$_def  'EDITOR:'
 
 banks_label:
     s$_def  'BANKS:'
@@ -121,9 +118,6 @@ tool_author:
 
 tool_copyright:
     s$_def  '(C) 2017 NYBBLES.IO'
-
-msgbox_title:
-    s$_def  'BANKED SAYS'
 
 pick_type_title:
     s$_def  'PICK'
@@ -180,9 +174,9 @@ type_name_lookup:
     dw      type_spr, type_tile, type_bg, type_font, type_pal, type_snd, type_mod
 
 exist_bank_msg1:
-    s$_def  'BANK FILE IS ALREADY ACTIVE'
+    s$_def  '   BANK FILE IS ALREADY ACTIVE'
 exist_bank_msg2:
-    s$_def  'DO YOU WANT TO START OVER?'
+    s$_def  '       WANT TO START OVER?'
 
 buttons:
 btn_new:
@@ -210,10 +204,10 @@ btn_props:
     bt_def F_BTN_VISIBLE, props_label, 5 by TAB_BAR_B + 36, 0 by TAB_BAR_B + 34, 38 by 8, 9 by 0, 0 by 0, btn_props_bank_cb
 
 btn_pal:
-    bt_def F_BTN_VISIBLE, pal_label, 10 by TAB_BAR_B + 52, 0 by TAB_BAR_B + 50, 38 by 8, 6 by 0, 0 by 0, btn_pal_cb
+    bt_def F_BTN_NONE, pal_label, 10 by TAB_BAR_B + 52, 0 by TAB_BAR_B + 50, 38 by 8, 6 by 0, 0 by 0, btn_pal_cb
 
 btn_tileset:
-    bt_def F_BTN_VISIBLE, tileset_label, 4 by TAB_BAR_B + 62, 0 by TAB_BAR_B + 60, 38 by 8, 6 by 0, 0 by 0, btn_tileset_cb
+    bt_def F_BTN_NONE, tileset_label, 4 by TAB_BAR_B + 62, 0 by TAB_BAR_B + 60, 38 by 8, 6 by 0, 0 by 0, btn_tileset_cb
 
 btn_ok:
     bt_def F_BTN_NONE, ok_label, 220 by 107, 205 by 105, 38 by 8, 9 by 0, 0 by 0, btn_ok_cb
@@ -246,25 +240,25 @@ btn_block_next:
     bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, down_arrow_char, 248 by 248, 248 by 248, 6 by 6, 0, 0, btn_block_next_cb
 
 btn_type_tile:
-    bt_def F_BTN_NONE, type_tile, PICK_BOX_MX + 4 by PICK_BOX_MY + 2, PICK_BOX_MX by PICK_BOX_MY, 28 by 8, 9 by 0, 0 by 0, btn_type_tile_cb
+    bt_def F_BTN_NONE, type_tile, PB_MX + 4 by PB_MY + 2, PB_MX by PB_MY, 28 by 8, 9 by 0, 0 by 0, btn_type_tile_cb
 
 btn_type_spr:
-    bt_def F_BTN_NONE, type_spr, PICK_BOX_MX + 6 by PICK_BOX_MY + 12, PICK_BOX_MX by PICK_BOX_MY + 10, 28 by 8, 9 by 0, 0 by 0, btn_type_spr_cb
+    bt_def F_BTN_NONE, type_spr, PB_MX + 6 by PB_MY + 12, PB_MX by PB_MY + 10, 28 by 8, 9 by 0, 0 by 0, btn_type_spr_cb
 
 btn_type_font:
-    bt_def F_BTN_NONE, type_font, PICK_BOX_MX + 4 by PICK_BOX_MY + 22, PICK_BOX_MX by PICK_BOX_MY + 20, 28 by 8, 9 by 0, 0 by 0, btn_type_font_cb
+    bt_def F_BTN_NONE, type_font, PB_MX + 4 by PB_MY + 22, PB_MX by PB_MY + 20, 28 by 8, 9 by 0, 0 by 0, btn_type_font_cb
 
 btn_type_pal:
-    bt_def F_BTN_NONE, type_pal, PICK_BOX_MX + 6 by PICK_BOX_MY + 32, PICK_BOX_MX by PICK_BOX_MY + 30, 28 by 8, 9 by 0, 0 by 0, btn_type_pal_cb
+    bt_def F_BTN_NONE, type_pal, PB_MX + 6 by PB_MY + 32, PB_MX by PB_MY + 30, 28 by 8, 9 by 0, 0 by 0, btn_type_pal_cb
 
 btn_type_bg:
-    bt_def F_BTN_NONE, type_bg, PICK_BOX_MX + 8 by PICK_BOX_MY + 42, PICK_BOX_MX by PICK_BOX_MY + 40, 28 by 8, 9 by 0, 0 by 0, btn_type_bg_cb
+    bt_def F_BTN_NONE, type_bg, PB_MX + 8 by PB_MY + 42, PB_MX by PB_MY + 40, 28 by 8, 9 by 0, 0 by 0, btn_type_bg_cb
 
 btn_type_snd:
-    bt_def F_BTN_NONE, type_snd, PICK_BOX_MX + 6 by PICK_BOX_MY + 52, PICK_BOX_MX by PICK_BOX_MY + 50, 28 by 8, 9 by 0, 0 by 0, btn_type_snd_cb
+    bt_def F_BTN_NONE, type_snd, PB_MX + 6 by PB_MY + 52, PB_MX by PB_MY + 50, 28 by 8, 9 by 0, 0 by 0, btn_type_snd_cb
 
 btn_type_mod:
-    bt_def F_BTN_NONE, type_mod, PICK_BOX_MX + 6 by PICK_BOX_MY + 62, PICK_BOX_MX by PICK_BOX_MY + 60, 28 by 8, 9 by 0, 0 by 0, btn_type_mod_cb
+    bt_def F_BTN_NONE, type_mod, PB_MX + 6 by PB_MY + 62, PB_MX by PB_MY + 60, 28 by 8, 9 by 0, 0 by 0, btn_type_mod_cb
 
     bt_def F_BTN_END, 0, 0, 0, 0, 0, 0
 
@@ -349,47 +343,34 @@ bank_file_field:
     tf_def  F_TXT_END, 0, 0, 0, 0
 
 no_file_state:
-    st_def  STATE_NO_FILE, no_file_cb
+    st_def  ST_NO_FILE, no_file_cb
 
 new_file_state:
-    st_def  STATE_NEW_FILE, new_file_cb
+    st_def  ST_NEW_FILE, new_file_cb
 
 load_file_state:
-    st_def  STATE_LOAD_FILE, load_file_cb
+    st_def  ST_LOAD_FILE, load_file_cb
 
 bank_state:
-    st_def  STATE_BANK, bank_cb
+    st_def  ST_BANK, bank_cb
 
 tile_bank_state:
-    st_def  STATE_TILE_BANK, tile_bank_cb
+    st_def  ST_TILE_BANK, tile_bank_cb
 
 spr_bank_state:
-    st_def  STATE_SPR_BANK, spr_bank_cb
+    st_def  ST_SPR_BANK, spr_bank_cb
 
 pal_bank_state:
-    st_def  STATE_PAL_BANK, pal_bank_cb
+    st_def  ST_PAL_BANK, pal_bank_cb
 
 font_bank_state:
-    st_def  STATE_FONT_BANK, font_bank_cb
+    st_def  ST_FONT_BANK, font_bank_cb
 
 bg_bank_state:
-    st_def  STATE_BG_BANK, bg_bank_cb
+    st_def  ST_BG_BANK, bg_bank_cb
 
 msgbox_state:
-    st_def  STATE_MSGBOX, msgbox_cb
-
-msgbox_lines:
-msgbox_line0:   s$_resv 32
-msgbox_line1:   s$_resv 32
-msgbox_line2:   s$_resv 32
-msgbox_line3:   s$_resv 32
-msgbox_line4:   s$_resv 32
-msgbox_line5:   s$_resv 32
-msgbox_line6:   s$_resv 32
-msgbox_line7:   s$_resv 32
-msgbox_line8:   s$_resv 32
-msgbox_line9:   s$_resv 32
-                db     0feh
+    st_def  ST_MSGBOX, msgbox_cb
 
 temp_fname:
     s$_resv     12
@@ -403,7 +384,7 @@ temp_ptr        dw  ?
 mouse_data:     dw  2 dup (?)
 viewer_cb:      dw  0
 selected_tb     db  0
-pick_box_draw   db  0
+pb_draw_flag    db  0
 bank_start_off  dw  0
 bank_start_idx  db  0
 bank_prev_flag  db  0
@@ -413,7 +394,7 @@ bank_next_flag  db  0
 ;³ msgbox_show                                       ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 msgbox_show:
-    st_chk  STATE_MSGBOX
+    st_chk  ST_MSGBOX
     cmp     al, 1
     je      >l0
     st_push msgbox_state
@@ -488,7 +469,7 @@ enter_bank_state:
 bank_fname_cb:
     cmp     al, 0
     je      >l0
-    s$_cpy  bank_fname + 1, temp_fname + 1, 12
+    s$_cpy  bank_fname, temp_fname, 12
     st_pop
     call    enter_bank_state
     bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
@@ -558,8 +539,9 @@ btn_tab1_cb:
     mov     bl, 1
     add     bl, bank_start_idx
     mov     selected_tb, bl
-    mov     bp, viewer_cb
-    mov     w[bp], tile_viewer_cb
+    bt_set  btn_remove, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_clear, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_props, F_BTN_ENABLED or F_BTN_VISIBLE
     pop     bx, bp
     ret
 
@@ -571,8 +553,9 @@ btn_tab2_cb:
     mov     bl, 2
     add     bl, bank_start_idx
     mov     selected_tb, bl
-    mov     bp, viewer_cb
-    mov     w[bp], spr_viewer_cb
+    bt_set  btn_remove, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_clear, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_props, F_BTN_ENABLED or F_BTN_VISIBLE
     pop     bx, bp
     ret
 
@@ -584,6 +567,9 @@ btn_tab3_cb:
     mov     bl, 3
     add     bl, bank_start_idx
     mov     selected_tb, bl
+    bt_set  btn_remove, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_clear, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_props, F_BTN_ENABLED or F_BTN_VISIBLE
     pop     bx, bp
     ret
 
@@ -595,6 +581,9 @@ btn_tab4_cb:
     mov     bl, 4
     add     bl, bank_start_idx
     mov     selected_tb, bl
+    bt_set  btn_remove, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_clear, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_props, F_BTN_ENABLED or F_BTN_VISIBLE
     pop     bx, bp
     ret
 
@@ -605,6 +594,7 @@ btn_ok_cb:
     mov     b mb_enabled, 0
     mov     b mb_action_flag, 1
     mov     b mb_result, 1
+    mb_clr
     bt_set  btn_ok, F_BTN_NONE
     bt_set  btn_cancel, F_BTN_NONE
     st_pop
@@ -618,6 +608,7 @@ btn_cancel_cb:
     mov     b mb_enabled, 0
     mov     b mb_action_flag, 1
     mov     b mb_result, 0
+    mb_clr
     bt_set  btn_ok, F_BTN_NONE
     bt_set  btn_cancel, F_BTN_NONE
     st_pop
@@ -629,7 +620,7 @@ btn_cancel_cb:
 btn_new_cb:
     push    bp
     bt_set  btn_new, F_BTN_VISIBLE
-    st_chk  STATE_BANK
+    st_chk  ST_BANK
     push    ax
     st_push new_file_state
     tf_set  bank_file_field, F_TXT_EDIT
@@ -643,10 +634,10 @@ btn_new_cb:
     xor     cx, cx
     mov     bp, exist_bank_msg1
     mov     cl, b[bp]
-    s$_cpy  msgbox_line3 + 1, exist_bank_msg1 + 1, cx
+    s$_cpy  mb_line3, exist_bank_msg1, cx
     mov     bp, exist_bank_msg2
     mov     cl, b[bp]
-    s$_cpy  msgbox_line4 + 1, exist_bank_msg2 + 1, cx
+    s$_cpy  mb_line4, exist_bank_msg2, cx
     pop     bp
     call    msgbox_show
 l0: pop     bp
@@ -667,10 +658,10 @@ btn_save_cb:
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ pick_box_hide                                     ³
+;³ pb_hide                                           ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-pick_box_hide:
-    mov     b pick_box_draw, 0
+pb_hide:
+    mov     b pb_draw_flag, 0
     bt_set  btn_type_tile, F_BTN_NONE
     bt_set  btn_type_spr, F_BTN_NONE
     bt_set  btn_type_font, F_BTN_NONE
@@ -681,10 +672,10 @@ pick_box_hide:
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ pick_box_show                                     ³
+;³ pb_show                                           ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-pick_box_show:
-    mov     b pick_box_draw, 1
+pb_show:
+    mov     b pb_draw_flag, 1
     bt_set  btn_type_tile, F_BTN_VISIBLE or F_BTN_ENABLED
     bt_set  btn_type_spr, F_BTN_VISIBLE or F_BTN_ENABLED
     bt_set  btn_type_font, F_BTN_VISIBLE or F_BTN_ENABLED
@@ -710,7 +701,7 @@ l0: pop     ax
 ;³ btn_add_bank_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_add_bank_cb:
-    call    pick_box_show
+    call    pb_show
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -804,70 +795,63 @@ btn_block_next_cb:
 ;³ btn_type_tile_cb                                  ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_tile_cb:
-    call    pick_box_hide
+    call    pb_hide
     bk_new  BANK_TYPE_TILE, 16
     call    btn_add_limit
-    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_spr_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_spr_cb:
-    call    pick_box_hide
+    call    pb_hide
     bk_new  BANK_TYPE_SPR, 16
     call    btn_add_limit
-    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_font_cb                                  ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_font_cb:
-    call    pick_box_hide
+    call    pb_hide
     bk_new  BANK_TYPE_FONT, 2
     call    btn_add_limit
-    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_bg_cb                                    ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_bg_cb:
-    call    pick_box_hide
+    call    pb_hide
     bk_new  BANK_TYPE_BG, 2
     call    btn_add_limit
-    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_pal_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_pal_cb:
-    call    pick_box_hide
+    call    pb_hide
     bk_new  BANK_TYPE_PAL, 2
     call    btn_add_limit
-    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_snd_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_snd_cb:
-    call    pick_box_hide
+    call    pb_hide
     bk_new  BANK_TYPE_SND, 16
     call    btn_add_limit
-    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_mod_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_type_mod_cb:
-    call    pick_box_hide
+    call    pb_hide
     bk_new  BANK_TYPE_MOD, 16
     call    btn_add_limit
-    bt_set  btn_remove, F_BTN_VISIBLE or F_BTN_ENABLED
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -922,8 +906,7 @@ l1: es mov  al, md_id
     es mov  al, md_type
     dec     al
     xlatw   al, type_name_lookup
-    inc     si
-    s$_cpy  tab_label + 4, si, 4
+    s$_cpy  tab_label + 3, si, 4
     vg_str  micro_font, tab_label, bx, dx, 1
     add     bh, 44
     sub     bl, 2
@@ -1038,10 +1021,10 @@ tb_vwr macro
 ;³ _pb_draw                                          ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _pb_draw:
-    vg_fbox PICK_BOX_X by PICK_BOX_Y, 35 by 85, 8 by 0
-    vg_box  PICK_BOX_X by PICK_BOX_Y, 35 by 85, 0 by 0
-    vg_fbox PICK_BOX_X + 2 by PICK_BOX_Y + 2, 32 by 7,  9 by 0
-    vg_str  micro_font, pick_type_title, PICK_BOX_X + 6 by PICK_BOX_Y + 3, 7 by 0, 1
+    vg_fbox PB_X by PB_Y, 35 by 85, 8 by 0
+    vg_box  PB_X by PB_Y, 35 by 85, 0 by 0
+    vg_fbox PB_X + 2 by PB_Y + 2, 32 by 7,  9 by 0
+    vg_str  micro_font, pick_type_title, PB_X + 6 by PB_Y + 3, 7 by 0, 1
     ret
 
 pb_draw macro
@@ -1055,19 +1038,18 @@ base_draw:
     vg_fbox 0 by 0, 38 by 256, 8 by 0
     vg_vl   38 by 0, 256, 0 by 0
 
-    vg_str  micro_font, file_label,   42 by 2, 7 by 0, 1
-    vg_str  micro_font, editor_label,206 by 2, 7 by 0, 1
-
-    vg_str  micro_font, tool_title,  1 by 2, 0 by 0, 1
-    vg_str  micro_font, tool_title,  2 by 3, 7 by 0, 1
+    vg_str  micro_font, tool_title, 1 by 2, 0 by 0, 1
+    vg_str  micro_font, tool_title, 2 by 3, 7 by 0, 1
 
     vg_str  micro_font, tool_version, 16 by 8, 0 by 0, 0
     vg_str  micro_font, tool_version, 17 by 9, 7 by 0, 0
 
+    vg_str  micro_font, file_label, 42 by 2, 7 by 0, 1
+
     tb_tabs
     tb_vwr
 
-    cmp     b pick_box_draw, 1
+    cmp     b pb_draw_flag, 1
     jnz     >l0
     pb_draw
 

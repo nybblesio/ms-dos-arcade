@@ -13,15 +13,15 @@
 ;Ё macros                                            Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 s$_defc macro
-    db  1, #1
+    db      1, #1
 #em
 
 s$_def macro
-    db  #s1 - 2, #1
+    db      #s1 - 2, #1
 #em
 
 s$_defq macro
-    db  #s1, '#1'
+    db      #s1, '#1'
 #em
 
 s$_resv macro
@@ -33,7 +33,29 @@ s$_resv macro
 ;Ё variables                                         Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 hex_chars:
-    db  '0123456789ABCDEF'
+    db      '0123456789ABCDEF'
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _s$_fill                                          Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+_s$_fill:
+    mov     bp, sp
+    mov     cx, [bp + 2]
+    mov     ax, [bp + 4]
+    mov     di, [bp + 6]
+    inc     di
+    mov     es, cs
+    cld
+    rep stosb
+    ret
+
+s$_fill macro
+    push    bp, es, ax, cx, di
+    push    #1, #2, #3
+    call    _s$_fill
+    add     sp, 6
+    pop     di, cx, ax, es, bp
+#em
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
 ;Ё _s$_cpy                                           Ё
@@ -42,7 +64,9 @@ _s$_cpy:
     mov     bp, sp
     mov     cx, [bp + 2]
     mov     si, [bp + 4]
+    inc     si
     mov     di, [bp + 6]
+    inc     di
     mov     es, cs
     cld
 l0: movsb

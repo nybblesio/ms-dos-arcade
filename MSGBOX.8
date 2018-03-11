@@ -16,8 +16,81 @@ mb_enabled      db  0
 mb_action_flag  db  0
 mb_result       db  0
 
+mb_lines:
+mb_line0:
+    s$_resv 32
+
+mb_line1:
+    s$_resv 32
+
+mb_line2:
+    s$_resv 32
+
+mb_line3:
+    s$_resv 32
+
+mb_line4:
+    s$_resv 32
+
+mb_line5:
+    s$_resv 32
+
+mb_line6:
+    s$_resv 32
+
+mb_line7:
+    s$_resv 32
+
+mb_line8:
+    s$_resv 32
+
+mb_line9:
+    s$_resv 32
+
+mb_lines_end:
+    db      0feh
+
+msgbox_title:
+    s$_def  'BANKED SAYS'
+
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ mb_draw                                           ³
+;³ macros                                            ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+mb_chk macro
+    mov     al, 0
+    cmp     mb_action_flag, 1
+    jnz     >m1
+m0: mov     al, 1
+    mov     mb_action_flag, 0
+    cmp     mb_result, 1
+    jnz     >m1
+    mov     mb_result, 0
+    mov     al, 2
+m1:
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _mb_clr                                           ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_mb_clr:
+    s$_fill mb_line0, 020h, 32
+    s$_fill mb_line1, 020h, 32
+    s$_fill mb_line2, 020h, 32
+    s$_fill mb_line3, 020h, 32
+    s$_fill mb_line4, 020h, 32
+    s$_fill mb_line5, 020h, 32
+    s$_fill mb_line6, 020h, 32
+    s$_fill mb_line7, 020h, 32
+    s$_fill mb_line8, 020h, 32
+    s$_fill mb_line9, 020h, 32
+    ret
+
+mb_clr macro
+    call    _mb_clr
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _mb_draw                                          ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _mb_draw:
     cmp     mb_enabled, 1
@@ -31,7 +104,7 @@ l0: vg_fbox 50 by 33, 196 by 85, 8 by 0
     xor     cx, cx
     mov     bh, 53
     mov     bl, 44
-    mov     bp, msgbox_lines
+    mov     bp, mb_lines
 l1: mov     cl, b[bp]
     cmp     cl, 0feh
     jne     >l3
@@ -46,17 +119,4 @@ mb_draw macro
     push    bp, ax, bx, cx, dx
     call    _mb_draw
     pop     dx, cx, bx, ax, bp
-#em
-
-mb_chk macro
-    mov     al, 0
-    cmp     mb_action_flag, 1
-    jnz     >m1
-m0: mov     al, 1
-    mov     mb_action_flag, 0
-    cmp     mb_result, 1
-    jnz     >m1
-    mov     mb_result, 0
-    mov     al, 2
-m1:
 #em
