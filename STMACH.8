@@ -15,24 +15,50 @@
 st_action struc [bp]
     st_code      db ?
     st_pad1      db ?
+    st_enter_cb  dw ?
     st_callback  dw ?
+    st_leave_cb  dw ?
 ends
 
 st_def macro
     db #1, 0
-    dw #2
+    dw #2, #3, #4
 #em
 
 st_push macro
-    push    bx
+    cmp     st_stack_ptr, st_stack_bot
+    jz      >m2
+    st_top
+    st_leave
+m2: push    bx
     sub     st_stack_ptr, 2
     mov     bx, st_stack_ptr
     mov     w[bx], #1
+    mov     bp, #1
     pop     bx
+    st_enter
+#em
+
+st_enter macro
+    cmp     st_enter_cb, 0
+    jz      >m0
+    call    [st_enter_cb]
+m0:
+#em
+
+st_leave macro
+    cmp     st_leave_cb, 0
+    jz      >m1
+    call    [st_leave_cb]
+m1:
 #em
 
 st_pop macro
+    st_top
+    st_leave
     add     st_stack_ptr, 2
+    st_top
+    st_enter
 #em
 
 st_top macro

@@ -37,16 +37,17 @@ include tiled.8
 ;³ constants                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 
-ST_NO_FILE   equ 1
-ST_NEW_FILE  equ 2
-ST_LOAD_FILE equ 3
-ST_BANK      equ 4
-ST_SPR_BANK  equ 5
-ST_TILE_BANK equ 6
-ST_PAL_BANK  equ 7
-ST_BG_BANK   equ 8
-ST_FONT_BANK equ 9
-ST_MSGBOX    equ 10
+ST_BASE      equ 1
+ST_NO_FILE   equ 2
+ST_NEW_FILE  equ 3
+ST_LOAD_FILE equ 4
+ST_BANK      equ 5
+ST_SPR_BANK  equ 6
+ST_TILE_BANK equ 7
+ST_PAL_BANK  equ 8
+ST_BG_BANK   equ 9
+ST_FONT_BANK equ 10
+ST_MSGBOX    equ 11
 
 TAB_BAR_X equ 38
 TAB_BAR_Y equ 160
@@ -180,16 +181,16 @@ exist_bank_msg2:
 
 buttons:
 btn_new:
-    bt_def F_BTN_ENABLED or F_BTN_VISIBLE, new_label, 8 by 22, 0 by 20, 38 by 8, 9 by 0, 0 by 0, btn_new_cb
+    bt_def F_BTN_VISIBLE, new_label, 8 by 22, 0 by 20, 38 by 8, 9 by 0, 0 by 0, btn_new_cb
 
 btn_load:
-    bt_def F_BTN_ENABLED or F_BTN_VISIBLE, load_label, 7 by 32, 0 by 30, 38 by 8, 9 by 0, 0 by 0, btn_load_cb
+    bt_def F_BTN_VISIBLE, load_label, 7 by 32, 0 by 30, 38 by 8, 9 by 0, 0 by 0, btn_load_cb
 
 btn_save:
     bt_def F_BTN_VISIBLE, save_label, 7 by 42, 0 by 40, 38 by 8, 9 by 0, 0 by 0,btn_save_cb
 
 btn_exit:
-    bt_def F_BTN_ENABLED or F_BTN_VISIBLE, exit_label, 7 by 52, 0 by 50, 38 by 8, 9 by 0, 0 by 0, btn_exit_cb
+    bt_def F_BTN_VISIBLE, exit_label, 7 by 52, 0 by 50, 38 by 8, 9 by 0, 0 by 0, btn_exit_cb
 
 btn_add:
     bt_def F_BTN_VISIBLE, add_label, 10 by TAB_BAR_B + 6, 0 by TAB_BAR_B + 4, 38 by 8, 9 by 0, 0 by 0, btn_add_bank_cb
@@ -342,35 +343,38 @@ bank_file_field:
 
     tf_def  F_TXT_END, 0, 0, 0, 0
 
+base_state:
+    st_def  ST_BASE,        base_state_enter_cb, base_state_upd_cb, nop_cb
+
 no_file_state:
-    st_def  ST_NO_FILE, no_file_cb
+    st_def  ST_NO_FILE,     no_file_enter_cb,    no_file_upd_cb,    nop_cb
 
 new_file_state:
-    st_def  ST_NEW_FILE, new_file_cb
+    st_def  ST_NEW_FILE,    new_file_enter_cb,   new_file_upd_cb,   nop_cb
 
 load_file_state:
-    st_def  ST_LOAD_FILE, load_file_cb
+    st_def  ST_LOAD_FILE,   0, load_file_cb, 0
 
 bank_state:
-    st_def  ST_BANK, bank_cb
+    st_def  ST_BANK,        bank_enter_cb,       bank_upd_cb,       bank_leave_cb
 
 tile_bank_state:
-    st_def  ST_TILE_BANK, tile_bank_cb
+    st_def  ST_TILE_BANK,   0, tile_bank_cb, 0
 
 spr_bank_state:
-    st_def  ST_SPR_BANK, spr_bank_cb
+    st_def  ST_SPR_BANK,    0, spr_bank_cb,  0
 
 pal_bank_state:
-    st_def  ST_PAL_BANK, pal_bank_cb
+    st_def  ST_PAL_BANK,    0, pal_bank_cb,  0
 
 font_bank_state:
-    st_def  ST_FONT_BANK, font_bank_cb
+    st_def  ST_FONT_BANK,   0, font_bank_cb, 0
 
 bg_bank_state:
-    st_def  ST_BG_BANK, bg_bank_cb
+    st_def  ST_BG_BANK,     0, bg_bank_cb,   0
 
 msgbox_state:
-    st_def  ST_MSGBOX, msgbox_cb
+    st_def  ST_MSGBOX,      0, msgbox_cb,    0
 
 temp_fname:
     s$_resv     12
@@ -389,6 +393,13 @@ bank_start_off  dw  0
 bank_start_idx  db  0
 bank_prev_flag  db  0
 bank_next_flag  db  0
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ nop_cb                                            ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+nop_cb:
+    nop
+    ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ msgbox_show                                       ³
@@ -421,28 +432,53 @@ l1: call    btn_ok_cb
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ no_file_cb                                        ³
+;³ base_state_enter_cb                               ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-no_file_cb:
+base_state_enter_cb:
+    ; check if we have a file and push appropriate
+    ; state, e.g. bank_state or no_file_state
+    st_push no_file_state
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ base_state_upd_cb                                 ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+base_state_upd_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ no_file_enter_cb                                  ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+no_file_enter_cb:
+    bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_load, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_exit, F_BTN_ENABLED or F_BTN_VISIBLE
+    tf_set  bank_file_field, F_TXT_READONLY
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ no_file_upd_cb                                    ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+no_file_upd_cb:
     bt_fire mouse_data, buttons
     mov     al, 0
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ new_file_cb                                       ³
+;³ new_file_enter_cb                                 ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-new_file_cb:
+new_file_enter_cb:
     mb_chk
     cmp     al, 1
     jnz     >l0
-
-    ; if OK,  we need to do more work to reset state
-
     st_pop
-    bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
-    tf_set  bank_file_field, F_TXT_READONLY
-    ret
-l0: tf_upd  text_fields
+l0: ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ new_file_upd_cb                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+new_file_upd_cb:
+    tf_upd  text_fields
     mov     al, 1
     ret
 
@@ -455,33 +491,42 @@ load_file_cb:
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ enter_bank_state                                  ³
-;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-enter_bank_state:
-    st_push bank_state
-    mov     selected_tb, 0
-    bt_set  btn_add, F_BTN_ENABLED or F_BTN_VISIBLE
-    ret
-
-;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ bank_fname_cb                                     ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 bank_fname_cb:
     cmp     al, 0
-    je      >l0
-    s$_cpy  bank_fname, temp_fname, 12
-    st_pop
-    call    enter_bank_state
+    jne     >l0
     bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
-    ret
-l0: bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
     st_pop
+    ret
+l0: s$_cpy  bank_fname, temp_fname, 12
+    st_pop
+    st_push bank_state
+    bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ bank_cb                                           ³
+;³ bank_enter_cb                                     ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-bank_cb:
+bank_enter_cb:
+    mov     selected_tb, 0
+    bt_set  btn_add, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_new, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_load, F_BTN_ENABLED or F_BTN_VISIBLE
+    bt_set  btn_exit, F_BTN_ENABLED or F_BTN_VISIBLE
+    tf_set  bank_file_field, F_TXT_READONLY
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ bank_enter_cb                                     ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+bank_leave_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ bank_upd_cb                                       ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+bank_upd_cb:
     bt_fire mouse_data, buttons
     mov     al, 0
     ret
@@ -1124,7 +1169,7 @@ init:
     call    cu_init
     tm_new  tm_fps, 60
     tm_new  tm_bk_scroll, 6
-    st_push no_file_state
+    st_push base_state
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿

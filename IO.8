@@ -64,8 +64,10 @@ get_scan_isr:
     out     061h, al
     mov     al, bl
     out     061h, al
-    pushf
-    cs call dword ptr key_old_isr
+    mov     al, 020h    ; reset PIC
+    out     020h, al
+    ;pushf
+    ;cs call dword ptr key_old_isr
     pop     di, bx, ax, ds
     sti
     iret
