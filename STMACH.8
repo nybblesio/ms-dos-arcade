@@ -26,45 +26,45 @@ st_def macro
 #em
 
 st_push macro
-    cmp     st_stack_ptr, st_stack_bot
+    cs cmp  st_stack_ptr, st_stack_bot
     jz      >m2
     st_top
     st_leave
 m2: push    bx
-    sub     st_stack_ptr, 2
-    mov     bx, st_stack_ptr
-    mov     w[bx], #1
-    mov     bp, #1
+    cs sub  st_stack_ptr, 2
+    cs mov  bx, st_stack_ptr
+    cs mov  w[bx], #1
+    cs mov  bp, #1
     pop     bx
     st_enter
 #em
 
 st_enter macro
-    cmp     st_enter_cb, 0
+    cs cmp  st_enter_cb, 0
     jz      >m0
-    call    [st_enter_cb]
+    cs call [st_enter_cb]
 m0:
 #em
 
 st_leave macro
-    cmp     st_leave_cb, 0
+    cs cmp  st_leave_cb, 0
     jz      >m1
-    call    [st_leave_cb]
+    cs call [st_leave_cb]
 m1:
 #em
 
 st_pop macro
     st_top
     st_leave
-    add     st_stack_ptr, 2
+    cs add  st_stack_ptr, 2
     st_top
     st_enter
 #em
 
 st_top macro
     push    bx
-    mov     bx, st_stack_ptr
-    mov     bp, w[bx]
+    cs mov  bx, st_stack_ptr
+    cs mov  bp, w[bx]
     pop     bx
 #em
 
@@ -72,7 +72,7 @@ st_chk macro
     push    bp
     st_top
     mov     al, 0
-    cmp     st_code, #1
+    cs cmp  st_code, #1
     jne     >m0
     mov     al, 1
 m0: pop     bp

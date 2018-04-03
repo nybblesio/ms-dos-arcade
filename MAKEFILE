@@ -1,15 +1,21 @@
 AS=a86
+
 AS_FLAGS=DEBUG
-GAME_SRCS=game.8
-BANKED_SRCS=banked.8
 
-all: game banked
+GAME_SRCS=game.8 constant.8 macro.8 string.8 file.8 control.8 \
+    memory.8 io.8 input.8 bank.8 timer.8 vga.8 video.8 sound.8
 
-game: $(GAME_SRCS)
-    $(AS) =$(AS_FLAGS) $(GAME_SRCS)
+BANKED_SRCS=banked.8 constant.8 macro.8 string.8 file.8 control.8 \
+    memory.8 io.8 input.8 bank.8 timer.8 vga.8 video.8 sound.8 \
+    caret.8 button.8 txtfield.8 stmach.8 msgbox.8 tiled.8
 
-banked: $(BANKED_SRCS)
-    $(AS) =$(AS_FLAGS) $(BANKED_SRCS)
+all: game.com banked.com
+
+game.com: $(GAME_SRCS)
+    $(AS) =$(AS_FLAGS) game.8
+
+banked.com: $(BANKED_SRCS)
+    $(AS) =$(AS_FLAGS) banked.8
 
 clean:
     del *.obj

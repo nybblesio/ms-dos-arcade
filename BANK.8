@@ -101,8 +101,13 @@ bk_reset:
 ;Ё bk_ptr                                            Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 bk_ptr macro
+    push    ax, cx, dx
     cs mov  es, bank_hdrs_seg
-    cs mov  bp, 0
+    cs mov  cx, #1
+    cs mov  ax, type bank_block
+    cs mul  cx
+    cs mov  bp, ax
+    pop     dx, cx, ax
 #em
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©

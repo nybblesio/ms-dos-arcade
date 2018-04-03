@@ -17,6 +17,7 @@ F_BTN_VISIBLE   equ 0000_0000_0000_0001xb
 F_BTN_ENABLED   equ 0000_0000_0000_0010xb
 F_BTN_NODRAW    equ 0000_0000_0000_0100xb
 F_BTN_TXTONLY   equ 0000_0000_0000_1000xb
+F_BTN_DEBOUNCE  equ 0000_0000_0001_0000xb
 F_BTN_END       equ 1000_0000_0000_0000xb
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -48,6 +49,24 @@ bt_set macro
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _btn_reset                                        ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_btn_reset:
+    mov     bp, sp
+    mov     bp, [bp + 4]
+l0: mov     ax, btn_flags
+    test    ax, F_BTN_END
+    jz      >l1
+    ret
+l1: test    ax, F_BTN_DEBOUNCE
+    jz      >l2
+    and     ax, 1111_1111_1110_1111xb
+    mov     btn_flags, ax
+l2: add     bp, type button
+    jmp     l0
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ _btn_fire                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _btn_fire:
@@ -56,34 +75,40 @@ _btn_fire:
     mov     bx, ms_pos
     mov     ax, ms_btn
     test    al, F_LEFT_MOUSE_BTN
-    jnz     >l4
+    jnz     >l0
+    call    _btn_reset
     ret
-l4: mov     bp, sp
+l0: mov     bp, sp
     mov     bp, [bp + 2]
-l0: mov     ax, btn_flags
+l1: mov     ax, btn_flags
     test    ax, F_BTN_END
-    jz      >l1
+    jz      >l2
     ret
-l1: test    ax, F_BTN_ENABLED
-    jz      >l3
-l2: mov     ax, btn_pos
+l2: test    ax, F_BTN_DEBOUNCE
+    jnz     >l4
+    test    ax, F_BTN_ENABLED
+    jz      >l4
+l3: mov     ax, btn_pos
     mov     cx, btn_size
     mov     dx, ax
     add     dx, cx
     cmp     bh, al
-    jb      >l3
+    jb      >l4
     cmp     bh, dl
-    ja      >l3
+    ja      >l4
     cmp     bl, ah
-    jb      >l3
+    jb      >l4
     cmp     bl, dh
-    ja      >l3
+    ja      >l4
     cmp     btn_func, 0
-    jz      >l3
+    jz      >l4
+    mov     ax, btn_flags
+    or      ax, F_BTN_DEBOUNCE
+    mov     btn_flags, ax
     call    [btn_func]
     ret
-l3: add     bp, type button
-    jmp     l0
+l4: add     bp, type button
+    jmp     l1
     ret
 
 bt_fire macro
