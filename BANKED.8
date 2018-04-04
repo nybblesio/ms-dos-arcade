@@ -51,15 +51,33 @@ ST_SND_BANK  equ 11
 ST_MOD_BANK  equ 12
 ST_MSGBOX    equ 13
 
-TAB_BAR_X equ 38
-TAB_BAR_Y equ 160
-TAB_BAR_H equ 10
-TAB_BAR_B equ TAB_BAR_Y + TAB_BAR_H
+TAB_BAR_X    equ 38
+TAB_BAR_Y    equ 160
+TAB_BAR_H    equ 10
+TAB_BAR_B    equ TAB_BAR_Y + TAB_BAR_H
 
-PB_Y equ TAB_BAR_B - 2
-PB_X equ 40
+PB_Y  equ TAB_BAR_B - 2
+PB_X  equ 40
 PB_MY equ PB_Y + 12
 PB_MX equ PB_X + 4
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ macros                                            ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+vw_func macro
+    push    bp
+    mov     bp, viewer_cb
+    mov     w[bp], #1
+    pop     bp
+#em
+
+vw_clr macro
+    push    bp
+    mov     bp, viewer_cb
+    mov     w[bp], 0
+    pop     bp
+#em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ structures & variables                            ³
@@ -127,6 +145,9 @@ pick_type_title:
 
 tab_label:
     s$_def  '00:TILE'
+
+palette_number:
+    s$_def  '00'
 
 block_label:
     s$_def  'BLOCK #'
@@ -379,10 +400,10 @@ bg_bank_state:
     st_def  ST_BG_BANK,     bg_bank_enter_cb,    bg_bank_upd_cb,    bg_bank_leave_cb
 
 snd_bank_state:
-    st_def  ST_SND_BANK,    nop_cb,              nop_cb,            nop_cb
+    st_def  ST_SND_BANK,    snd_bank_enter_cb,   snd_bank_upd_cb,   snd_bank_leave_cb
 
 mod_bank_state:
-    st_def  ST_MOD_BANK,    nop_cb,              nop_cb,            nop_cb
+    st_def  ST_MOD_BANK,    mod_bank_enter_cb,   mod_bank_upd_cb,   mod_bank_leave_cb
 
 msgbox_state:
     st_def  ST_MSGBOX,      msgbox_enter_cb,     msgbox_upd_cb,     msgbox_leave_cb
@@ -400,10 +421,51 @@ mouse_data:     dw  2 dup (?)
 viewer_cb:      dw  0
 selected_tb     db  0
 pb_draw_flag    db  0
+block_idx       db  0
+block_max       db  0
 bank_start_off  dw  0
 bank_start_idx  db  0
 bank_prev_flag  db  0
 bank_next_flag  db  0
+palette_idx     db  0
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ block utiltity functions                          ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+update_block_number:
+    xor     ah, ah
+    mov     al, block_idx
+    inc     al
+    s$_dec2 block_number, al
+    ret
+
+update_block_total:
+    es mov  al, md_blk_max
+    mov     block_max, al
+    s$_dec2 block_total_number, al
+    ret
+
+tb_blk macro
+    push    ax
+    xor     ah, ah
+    mov     al, selected_tb
+    dec     al
+    bk_ptr  ax
+    pop     ax
+#em
+
+tb_go macro
+    push    es, bp, si, ax, bx
+    mov     ax, #1
+    dec     ax
+    bk_ptr  ax
+    xor     ax, ax
+    es mov  al, md_type
+    dec     al
+    xlatw   al, bank_select_jt
+    cs call si
+    pop     bx, ax, si, bp, es
+#em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ nop state callbacks                               ³
@@ -533,10 +595,13 @@ bank_leave_cb:
 ;³ tile bank state callbacks                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 tile_bank_enter_cb:
-    push    bp
-    mov     bp, viewer_cb
-    mov     w[bp], tile_viewer_cb
-    pop     bp
+    tb_blk
+    vw_func tile_viewer_cb
+    mov     b block_idx, 0
+    call    update_block_number
+    call    update_block_total
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     ret
 
 tile_bank_upd_cb:
@@ -545,20 +610,22 @@ tile_bank_upd_cb:
     ret
 
 tile_bank_leave_cb:
-    push    bp
-    mov     bp, viewer_cb
-    mov     w[bp], 0
-    pop     bp
+    vw_clr
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_TXTONLY
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ sprite bank state callbacks                       ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 spr_bank_enter_cb:
-    push    bp
-    mov     bp, viewer_cb
-    mov     w[bp], spr_viewer_cb
-    pop     bp
+    tb_blk
+    vw_func spr_viewer_cb
+    mov     b block_idx, 0
+    call    update_block_number
+    call    update_block_total
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     ret
 
 spr_bank_upd_cb:
@@ -567,16 +634,23 @@ spr_bank_upd_cb:
     ret
 
 spr_bank_leave_cb:
-    push    bp
-    mov     bp, viewer_cb
-    mov     w[bp], 0
-    pop     bp
+    vw_clr
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_TXTONLY
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ palette bank state callbacks                      ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 pal_bank_enter_cb:
+    tb_blk
+    vw_func pal_viewer_cb
+    mov     b block_idx, 0
+    mov     b palette_idx, 0
+    call    update_block_number
+    call    update_block_total
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     ret
 
 pal_bank_upd_cb:
@@ -585,12 +659,22 @@ pal_bank_upd_cb:
     ret
 
 pal_bank_leave_cb:
+    vw_clr
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_TXTONLY
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ background bank state callbacks                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 bg_bank_enter_cb:
+    tb_blk
+    vw_func bg_viewer_cb
+    mov     b block_idx, 0
+    call    update_block_number
+    call    update_block_total
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     ret
 
 bg_bank_upd_cb:
@@ -599,12 +683,70 @@ bg_bank_upd_cb:
     ret
 
 bg_bank_leave_cb:
+    vw_clr
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_TXTONLY
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ sound bank state callbacks                        ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+snd_bank_enter_cb:
+    tb_blk
+    vw_func snd_viewer_cb
+    mov     b block_idx, 0
+    call    update_block_number
+    call    update_block_total
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
+    ret
+
+snd_bank_upd_cb:
+    bt_fire mouse_data, buttons
+    mov     al, 0
+    ret
+
+snd_bank_leave_cb:
+    vw_clr
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_TXTONLY
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ module bank state callbacks                       ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+mod_bank_enter_cb:
+    tb_blk
+    vw_func mod_viewer_cb
+    mov     b block_idx, 0
+    call    update_block_number
+    call    update_block_total
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
+    ret
+
+mod_bank_upd_cb:
+    bt_fire mouse_data, buttons
+    mov     al, 0
+    ret
+
+mod_bank_leave_cb:
+    vw_clr
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_TXTONLY
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ font bank state callbacks                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 font_bank_enter_cb:
+    tb_blk
+    vw_func font_viewer_cb
+    mov     b block_idx, 0
+    call    update_block_number
+    call    update_block_total
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     ret
 
 font_bank_upd_cb:
@@ -613,6 +755,9 @@ font_bank_upd_cb:
     ret
 
 font_bank_leave_cb:
+    vw_clr
+    bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_TXTONLY
+    bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_TXTONLY
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -690,19 +835,6 @@ snd_bank_select:
 mod_bank_select:
     bk_go   mod_bank_state
     ret
-
-tb_go macro
-    push    es, bp, si, ax, bx
-    mov     ax, #1
-    dec     ax
-    bk_ptr  ax
-    xor     ax, ax
-    es mov  al, md_type
-    dec     al
-    xlatw   al, bank_select_jt
-    cs call si
-    pop     bx, ax, si, bp, es
-#em
 
 btn_tab1_cb:
     push    bx
@@ -948,13 +1080,23 @@ btn_bank_next_cb:
 ;³ btn_block_prev_cb                                 ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_block_prev_cb:
-    ret
+    cmp     block_idx, 0
+    jz      >l0
+    dec     block_idx
+    call    update_block_number
+l0: ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_block_next_cb                                 ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 btn_block_next_cb:
-    ret
+    mov     al, block_max
+    dec     al
+    cmp     block_idx, al
+    je      >l0
+    inc     block_idx
+    call    update_block_number
+l0: ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_tile_cb                                  ³
@@ -1030,10 +1172,7 @@ btn_exit_cb:
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 tm_fps:
     tm_clr
-    mov     di, frame_rate + 1
-    xor     ax, ax
-    cs mov  al, fps
-    call    s$_dec2
+    s$_dec2 frame_rate, fps
     cs mov  fps, 0
     ret
 
@@ -1066,8 +1205,7 @@ l0: inc     bh
     jnz     >l1
     mov     dx, 7 by 0
 l1: es mov  al, md_id
-    cs mov  di, tab_label + 1
-    call    s$_dec2
+    s$_dec2 tab_label, al
     es mov  al, md_type
     dec     al
     xlatw   al, type_name_lookup
@@ -1127,6 +1265,73 @@ tb_tabs macro
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ snd_viewer_cb                                     ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+snd_viewer_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ mod_viewer_cb                                     ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+mod_viewer_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ bg_viewer_cb                                      ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+bg_viewer_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ font_viewer_cb                                    ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+font_viewer_cb:
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ pal_viewer_cb                                     ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+pal_viewer_cb:
+    mov     dl, 0
+    mov     dh, palette_idx
+    mov     cx, 8
+    mov     bh, 60
+    mov     bl, 21
+l2: vg_fbox bx, 32 by 16, dx
+    push    bx
+    mov     bh, 43
+    add     bl, 5
+    s$_dec2 palette_number, dl
+    vg_str  micro_font, palette_number, bx, 7 by 0, 1
+    pop     bx
+    inc     dl
+    add     bl, 17
+    loop    l2
+
+    ; draws the palettes in the block
+    mov     ax, 0
+    mov     dx, 2
+    mov     bh, TAB_BAR_X + 6
+    mov     bl, TAB_BAR_Y + 30
+l0: mov     cx, 8
+l1: vg_fbox bx, 24 by 24, 4 by 0
+    s$_dec2 palette_number, al
+    inc     ax
+    push    bx
+    add     bh, 6
+    add     bl, 10
+    vg_str  micro_font, palette_number, bx, 7 by 0, 1
+    pop     bx
+    add     bh, 25
+    loop    l1
+    dec     dx
+    add     bl, 25
+    mov     bh, TAB_BAR_X + 6
+    cmp     dx, 0
+    jnz     l0
+    ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ tile_viewer_cb                                    ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 tile_viewer_cb:
@@ -1172,16 +1377,16 @@ _tb_viewer_draw:
     vg_str  micro_font, block_number, TAB_BAR_X + 48 by TAB_BAR_Y + 14, 7 by 0, 1
     vg_str  micro_font, of_label, TAB_BAR_X + 66 by TAB_BAR_Y + 14, 7 by 0, 1
     vg_str  micro_font, block_total_number, TAB_BAR_X + 84 by TAB_BAR_Y + 14, 7 by 0, 1
-    mov     bp, viewer_cb
-    cmp     w[bp], 0
+    mov     bx, viewer_cb
+    cmp     w[bx], 0
     jz      >l0
-    call    [bp]
+    call    [bx]
 l0: ret
 
 tb_vwr macro
-    push    bp
+    push    bx
     call    _tb_viewer_draw
-    pop     bp
+    pop     bx
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -1238,10 +1443,7 @@ draw:
 
 
     st_top
-    mov     di, state_number + 1
-    xor     ax, ax
-    cs mov  al, st_code
-    call    s$_dec2
+    s$_dec2 state_number, st_code
     vg_str  micro_font, state_number, 2 by 240, 0 by 0, 1
 #endif
     ret

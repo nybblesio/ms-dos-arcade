@@ -591,9 +591,10 @@ _frect:
     ends
 
     mov     bp, sp
+    xor     ax, ax
     mov     al, fr_pal
     shl     al, 4
-    add     al, hl_clr
+    add     al, fr_clr
     mov     bh, fr_y
     mov     bl, fr_x
     mov     ch, fr_h

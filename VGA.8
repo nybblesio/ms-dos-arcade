@@ -178,40 +178,51 @@ sc_off macro
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ _palette                                          ³
+;³ _set_pal_idx                                      ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-_palette:
-    struc [bp]
-                dw ?
-                db ?
-        pal_n   db ?
-                db ?
-        pal_r   db ?
-                db ?
-        pal_g   db ?
-                db ?
-        pal_b   db ?
-    ends
-
+_set_pal_idx:
     mov     bp, sp
+    mov     ax, [bp + 2]
     mov     dx, PEL_IW
-    mov     al, pal_n
-    out     dx, al
-    mov     dx, PEL_D
-    mov     al, pal_r
-    out     dx, al
-    mov     al, pal_g
-    out     dx, al
-    mov     al, pal_b
     out     dx, al
     ret
 
-sc_pal macro
-    push    bp, ax, bx, cx, dx
-    push    #4, #3, #2, #1
-    call    _palette
-    add     sp, 8
-    pop     dx, cx, bx, ax, bp
+sc_pidx macro
+    push    bp, ax, dx
+    push    #1
+    call    _set_pal_idx
+    add     sp, 2
+    pop     dx, ax, bp
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _set_pal_color                                    ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_set_pal_color:
+    struc [bp]
+                dw ?
+        pal_red db ?
+        pal_grn db ?
+        pal_blu db ?
+        pal_pad db ?
+    ends
+
+    mov     bp, sp
+    mov     dx, PEL_D
+    mov     al, pal_red
+    out     dx, al
+    mov     al, pal_grn
+    out     dx, al
+    mov     al, pal_blu
+    out     dx, al
+    ret
+
+sc_prgb macro
+    push    bp, ax, dx
+    push    #3 by #2, #1 by 0
+    call    _set_pal_color
+    add     sp, 4
+    pop     dx, ax, bp
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿

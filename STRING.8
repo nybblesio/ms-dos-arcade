@@ -82,9 +82,9 @@ s$_cpy macro
 #em
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё s$_dec2                                           Ё
+;Ё _s$_dec2                                           Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
-s$_dec2:
+_s$_dec2:
     push    es, ax
     mov     es, cs
     aam
@@ -93,6 +93,15 @@ s$_dec2:
     stosw
     pop     ax, es
     ret
+
+s$_dec2 macro
+    push    di, ax
+    mov     di, #1 + 1
+    cs mov  al, #2
+    xor     ah, ah
+    call    _s$_dec2
+    pop     ax, di
+#em
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
 ;Ё s$_dec5                                           Ё

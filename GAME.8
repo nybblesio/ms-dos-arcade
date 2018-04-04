@@ -115,10 +115,7 @@ l0: ret
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 fps_timer:
     tm_clr
-    mov     di, frame_rate + 1
-    xor     ax, ax
-    cs mov  al, fps
-    call    s$_dec2
+    s$_dec2 frame_rate, fps
     cs mov  fps, 0
     ret
 

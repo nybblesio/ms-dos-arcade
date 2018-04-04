@@ -12,6 +12,7 @@
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
 ;Ё constants                                         Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+
 F_BANK_BLOCK_NONE   equ 0000_0000_0000_0000xb
 F_BANK_BLOCK_DEL    equ 0000_0000_0000_0001xb
 F_BANK_BLOCK_DIRTY  equ 0000_0000_0000_0010xb
@@ -181,7 +182,7 @@ bk_new macro
     push    bp, cx, bx
     push    #1 by #2
     call    _bank_new
-    add     sp, 4
+    add     sp, 2
     pop     bx, cx, bp
 #em
 
