@@ -16,35 +16,61 @@
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ variables                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+tiled_pal_idx   db  0
+tiled_pal_color db  0
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _tiled_shell                                      ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_tiled_shell:
+    vg_fbox 43 by 20, 128 by 128, 8 by 0
+    vg_box  42 by 20, 128 by 128, 0 by 0
+    mov     bh, 238
+    mov     bl, 0
+    mov     dl, tiled_pal_idx
+    mov     dh, 0
+    mov     cx, 16
+l0: vg_fbox bx, 16 by 8, dx
+    vg_box  bx, 15 by 7, 0 by 0
+    push    bx
+    sub     bh, 12
+    add     bl, 2
+    s$_dec2 palette_number, dh
+    vg_str  micro_font, palette_number, bx, 7 by 0, 1
+    pop     bx
+    cmp     dh, tiled_pal_color
+    jne     >l1
+    vg_box  bx, 15 by 8, 7 by 0
+l1: inc     dh
+    add     bl, 10
+    dec     cx
+    cmp     cx, 0
+    je      >l2
+    jmp     l0
+l2: ret
+
+te_shell macro
+    push    ax, bx, cx, dx
+    call    _tiled_shell
+    pop     dx, cx, bx, ax
+#em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ _tiled_draw                                       ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _tiled_draw:
-    struc [bp]
-                    dw ?
-                    db ?
-        te_pix_sz   db ?
-                    db ?
-        te_tile_sz  db ?
-                    db ?
-        te_pal      db ?
-    ends
-
     mov     bp, sp
-    vg_fbox 43 by 20, 128 by 128, 8 by 0
-    vg_box  42 by 20, 128 by 128, 0 by 0
     mov     bh, 43
     mov     bl, 21
-    mov     dh, te_pix_sz
+    cs mov  dh, b[bp + 4]
     mov     dl, dh
-    cs mov  ch, te_tile_sz
-l0: cs mov  cl, te_tile_sz
+    cs mov  ch, b[bp + 2]
+l0: cs mov  cl, b[bp + 2]
 l1: ds mov  al, [si]
     aam     16
     push    cx
+    cs mov  cl, b[bp + 6]
     mov     ch, ah
-    cs mov  cl, te_pal
     vg_fbox bx, dx, cx
     add     bh, dh
     inc     bh
@@ -53,6 +79,7 @@ l1: ds mov  al, [si]
     add     bh, dh
     inc     bh
     pop     cx
+    inc     si
     sub     cl, 2
     cmp     cl, 0
     jne     l1
@@ -60,6 +87,7 @@ l1: ds mov  al, [si]
     inc     bl
     mov     bh, 43
     dec     ch
+    cmp     ch, 0
     jnz     l0
     ret
 

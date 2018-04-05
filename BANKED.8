@@ -711,7 +711,7 @@ tile_bank_enter_cb:
 
 tile_bank_upd_cb:
     bt_fire     mouse_data, buttons
-    key_common  tile_keys, tile_idx, 132, 22
+    key_common  tile_keys, tile_idx, 127, 22
     ret
 
 tile_bank_leave_cb:
@@ -735,7 +735,7 @@ spr_bank_enter_cb:
 
 spr_bank_upd_cb:
     bt_fire     mouse_data, buttons
-    key_common  spr_keys, sprite_idx, 36, 12
+    key_common  spr_keys, sprite_idx, 31, 12
     ret
 
 spr_bank_leave_cb:
@@ -1230,6 +1230,19 @@ btn_type_spr_cb:
     call    pb_hide
     bk_new  BANK_TYPE_SPR, 16
     call    btn_add_limit
+    mov     bp, ax
+    bl_new
+    mov     di, bp
+    add     di, 5
+    cld
+    mov     cx, 511
+    mov     ax, 0707
+l0: stosw
+    stosw
+    stosw
+    stosw
+    rol     ax, 4
+    loop    l0
     ret
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
@@ -1427,25 +1440,26 @@ font_viewer_cb:
 pal_col_draw:
     mov     cx, 8
 l0: vg_fbox bx, 32 by 16, dx
+    vg_box  bx, 32 by 15, 0 by 0
     push    bx
     sub     bh, 16
     add     bl, 5
-    s$_dec2 palette_number, dl
+    s$_dec2 palette_number, dh
     vg_str  micro_font, palette_number, bx, 7 by 0, 1
     pop     bx
-    inc     dl
+    inc     dh
     add     bl, 17
     loop    l0
     ret
 
 pal_viewer_cb:
-    mov     dl, 0
-    mov     dh, palette_idx
+    mov     dh, 0
+    mov     dl, palette_idx
     mov     bh, 60
-    mov     bl, 21
+    mov     bl, 20
     call    pal_col_draw
     mov     bh, 180
-    mov     bl, 21
+    mov     bl, 20
     call    pal_col_draw
 
     ; draws the palettes in the block
@@ -1476,13 +1490,15 @@ l2: inc     ax
 l3: ret
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё tile_viewer_cb                                    Ё
+;Ё tile_draw                                         Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
-_tile_draw:
+tile_draw:
     struc [bp]
                 dw ?
         tv_pos  dw ?
         tv_pal  dw ?
+        tv_h    db ?
+        tv_w    db ?
     ends
 
     mov     bp, sp
@@ -1490,8 +1506,8 @@ _tile_draw:
     xchg    bh, bl
     cs mov  dx, tv_pal
     shl     dl, 4
-    mov     ch, TILE_LINES
-    mov     cl, TILE_WIDTH
+    mov     ch, tv_h
+    mov     cl, tv_w
     cs mov  es, back_buffer_ptr
 l1: ds mov  al, [si]
     aam     16
@@ -1504,21 +1520,25 @@ l1: ds mov  al, [si]
     inc     si
     dec     cl
     jnz     l1
-    mov     cl, TILE_WIDTH
+    mov     cl, tv_w
     inc     bh
-    sub     bl, TILE_WIDTH * 2
+    sub     bl, tv_w
+    sub     bl, tv_w
     dec     ch
     jnz     l1
     ret
 
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё tile_viewer_cb                                    Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 tile_viewer_cb:
     push    ds, es, bp, ax, bx, cx, dx
+    te_shell
     tb_blk
     bl_ptr  block_idx
     mov     ds, es
     mov     si, bp
     add     si, 5
-    te_draw 8, 15, 0
     mov     al, 0
     mov     dx, 6
     mov     bh, TAB_BAR_X + 4
@@ -1528,15 +1548,19 @@ l0: cmp     dx, 1
     mov     cx, 22
     jmp     >l1
 l3: mov     cx, 17
-l1: push    es, ax, bx, cx, dx
-    push    0, bx
-    cs call _tile_draw
-    add     sp, 4
-    pop     dx, cx, bx, ax, es
+l1: push    es, si, ax, bx, cx, dx
+    push    TILE_WIDTH by TILE_LINES, 0, bx
+    cs call tile_draw
+    add     sp, 6
+    pop     dx, cx, bx, ax, si, es
     cs cmp  al, tile_idx
     jne     >l2
     vg_box  bx, 7 by 7, 7 by 0
-l2: inc     al
+    push    si
+    te_draw 8, 15, 0
+    pop     si
+l2: add     si, TILE_WIDTH * TILE_LINES
+    inc     al
     add     bh, 9
     loop    l1
     add     bl, 9
@@ -1551,17 +1575,35 @@ l2: inc     al
 ;Ё spr_viewer_cb                                     Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 spr_viewer_cb:
-    te_draw 16, 7, 0
+    push    ds, es, bp, ax, bx, cx, dx
+    te_shell
+    tb_blk
+    bl_ptr  block_idx
+    mov     ds, es
+    mov     si, bp
+    add     si, 5
     mov     al, 0
     mov     dx, 3
     mov     bh, TAB_BAR_X + 4
     mov     bl, TAB_BAR_Y + 28
-l0: mov     cx, 12
-l1: vg_fbox bx, 16 by 16, 4 by 0
-    cmp     al, sprite_idx
+l0: cmp     dx, 1
+    je      >l3
+    mov     cx, 12
+    jmp     >l1
+l3: mov     cx, 7
+l1: push    es, si, ax, bx, cx, dx
+    push    SPR_WIDTH by SPR_LINES, 0, bx
+    cs call tile_draw
+    add     sp, 6
+    pop     dx, cx, bx, ax, si, es
+    cs cmp  al, sprite_idx
     jne     >l2
     vg_box  bx, 15 by 15, 7 by 0
-l2: inc     al
+    push    si
+    te_draw 16, 7, 0
+    pop     si
+l2: add     si, SPR_WIDTH * SPR_LINES
+    inc     al
     add     bh, 17
     loop    l1
     dec     dx
@@ -1569,6 +1611,7 @@ l2: inc     al
     mov     bh, TAB_BAR_X + 4
     cmp     dx, 0
     jnz     l0
+    pop     dx, cx, bx, ax, bp, es, ds
     ret
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
