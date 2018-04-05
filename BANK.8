@@ -25,6 +25,8 @@ BANK_TYPE_PAL       equ 5
 BANK_TYPE_SND       equ 6
 BANK_TYPE_MOD       equ 7
 
+BLOCK_TYPE_DATA     equ 1
+
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
 ;Ё structures                                        Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
@@ -70,6 +72,7 @@ SZ_BANK_BLK_PARA    equ SZ_BANK_BLK / 16
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
 even
 
+bank_block_id       db  1
 bank_hdr_id         db  1
 bank_hdrs_seg       dw  ?
 bank_hdrs_off       dw  ?
@@ -109,6 +112,21 @@ bk_ptr macro
     cs mul  cx
     cs mov  bp, ax
     pop     dx, cx, ax
+#em
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё bl_ptr                                            Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+bl_ptr macro
+    push    ax, bx
+    es mov  bx, md_blk_seg
+    mov     es, bx
+    xor     ch, ch
+    cs mov  cl, #1
+    cs mov  ax, type bank_block
+    cs mul  cx
+    cs mov  bp, ax
+    pop     bx, ax
 #em
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
@@ -184,6 +202,31 @@ bk_new macro
     call    _bank_new
     add     sp, 2
     pop     bx, cx, bp
+#em
+
+;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
+;Ё _block_new                                        Ё
+;юддддддддддддддддддддддддддддддддддддддддддддддддддды
+_block_new:
+    es mov  bx, md_blk_off
+    es add  md_blk_off, type bank_block
+    es mov  al, md_flags
+    or      al, F_BANK_BLOCK_DIRTY
+    es mov  md_flags, al
+    es mov  es, md_blk_seg
+    mov     bp, bx
+    es mov  block_type, BLOCK_TYPE_DATA
+    mov     al, bank_block_id
+    es mov  block_id, al
+    inc     al
+    mov     bank_block_id, al
+    es mov  block_flags, F_BANK_BLOCK_DIRTY
+    ret
+
+bl_new macro
+    push    ax, bx
+    call    _block_new
+    pop     bx, ax
 #em
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©

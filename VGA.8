@@ -39,6 +39,13 @@ VRAM_PITCH  equ 256
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ structures                                        ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+
+vga_color struc [bp]
+    clr_red db ?
+    clr_grn db ?
+    clr_blu db ?
+ends
+
 vga_reg_cfg struc [bp]
     vga_reg     dw ?
     vga_func    db ?
@@ -178,21 +185,64 @@ sc_off macro
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ _set_pal_idx                                      ³
+;³ _set_pal_read_idx                                 ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-_set_pal_idx:
+_set_pal_read_idx:
+    mov     bp, sp
+    mov     ax, [bp + 2]
+    mov     dx, PEL_IR
+    out     dx, al
+    ret
+
+sc_palr macro
+    push    bp, ax, dx
+    push    #1
+    call    _set_pal_read_idx
+    add     sp, 2
+    pop     dx, ax, bp
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _set_pal_write_idx                                ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_set_pal_write_idx:
     mov     bp, sp
     mov     ax, [bp + 2]
     mov     dx, PEL_IW
     out     dx, al
     ret
 
-sc_pidx macro
+sc_palw macro
     push    bp, ax, dx
     push    #1
-    call    _set_pal_idx
+    call    _set_pal_write_idx
     add     sp, 2
     pop     dx, ax, bp
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _get_pal_color                                    ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_get_pal_color:
+    mov     bp, sp
+    mov     es, cs
+    mov     di, [bp + 2]
+    cld
+    mov     dx, PEL_D
+    in      al, dx  ; red
+    stosb
+    in      al, dx  ; green
+    stosb
+    in      al, dx  ; blue
+    stosb
+    ret
+
+sc_rgbr macro
+    push    es, bp, di, ax, dx
+    push    #1
+    call    _get_pal_color
+    add     sp, 2
+    pop     dx, ax, di, bp, es
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -217,7 +267,7 @@ _set_pal_color:
     out     dx, al
     ret
 
-sc_prgb macro
+sc_rgbw macro
     push    bp, ax, dx
     push    #3 by #2, #1 by 0
     call    _set_pal_color
