@@ -645,6 +645,73 @@ tile_idx        db  0
 sprite_idx      db  0
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _grid_select                                      ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_grid_select:
+    struc [bp]
+                dw ?
+        gs_pos  dw ?
+        gs_sz   dw ?
+        gs_w    db ?
+        gs_cols db ?
+    ends
+
+    mov     bp, mouse_data
+    mov     ax, ms_btn
+    mov     bx, ms_pos
+    test    al, F_LEFT_MOUSE_BTN
+    jnz     >l0
+    mov     ah, 0
+    mov     al, 0
+    ret
+l0: mov     bp, sp
+    mov     ax, gs_pos
+    mov     cx, gs_sz
+    mov     dx, ax
+    add     dx, cx
+    cmp     bh, al
+    jb      >l1
+    cmp     bh, dl
+    ja      >l1
+    cmp     bl, ah
+    jb      >l1
+    cmp     bl, dh
+    ja      >l1
+    mov     dx, gs_pos
+    xor     ch, ch
+    mov     cl, gs_w
+    xor     ax, ax
+    mov     al, bl
+    sub     al, dh
+    div     cl
+    mov     dh, al
+    s$_hex2 temp_number1, dh
+    xor     ax, ax
+    mov     al, bh
+    mov     bx, gs_pos
+    sub     al, bl
+    div     cl
+    mov     dl, al
+    s$_hex2 temp_number2, dl
+    mov     al, dl
+    mov     cl, gs_cols
+    mul     cl
+    mov     dl, al
+    add     dl, dh
+    s$_hex2 temp_number3, dl
+    mov     ah, 1
+    mov     al, dl
+l1: ret
+
+mo_grid macro
+    push    bp, bx, cx, dx
+    push    #3, #2, #1
+    call    _grid_select
+    add     sp, 6
+    pop     dx, cx, bx, bp
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ block utiltity functions                          ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 update_block_number:
@@ -821,59 +888,20 @@ tile_bank_enter_cb:
     bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     ret
 
+
 tile_bank_upd_cb:
     bt_fire mouse_data, buttons
     key_common  tile_keys, tile_idx, 127, 22
     cmp     al, 2
-    jne     >l1
+    jne     >l0
     ret
-l1: push    bp
-    mov     bp, mouse_data
-    mov     ax, ms_btn
-    mov     bx, ms_pos
-    pop     bp
-    test    al, F_LEFT_MOUSE_BTN
-    jnz     >l0
-    ret
-l0: push    ax, bx, cx, dx
-    mov     ax, 42 by 186
-    mov     cx, 198 by 54
-    mov     dx, ax
-    add     dx, cx
-    cmp     bh, al
-    jb      >l2
-    cmp     bh, dl
-    ja      >l2
-    cmp     bl, ah
-    jb      >l2
-    cmp     bl, dh
-    ja      >l2
-
-    mov     cx, 9
-    xor     ax, ax
-    mov     al, bl
-    sub     al, 42
-    div     cl
-    mov     dh, al
-    s$_hex2 temp_number1, dh
-
-    xor     ax, ax
-    mov     al, bh
-    sub     al, 186
-    div     cl
-    mov     dl, al
-    s$_hex2 temp_number2, dl
-
-    mov     al, dl
-    mov     cl, 22
-    mul     cl
-    mov     dl, al
-    add     dl, dh
-    s$_hex2 temp_number3, dl
-    cmp     dl, 126
-    ja      >l2
-    mov     tile_idx, dl
-l2: pop     dx, cx, bx, ax
+l0: mo_grid 42 by 186, 198 by 54, 22 by 9
+    cmp     ah, 0
+    je      >l1
+    cmp     al, 126
+    ja      >l1
+    mov     tile_idx, al
+l1: mov     al, 1
     ret
 
 tile_bank_leave_cb:
@@ -900,8 +928,18 @@ spr_bank_enter_cb:
     ret
 
 spr_bank_upd_cb:
-    bt_fire     mouse_data, buttons
+    bt_fire mouse_data, buttons
     key_common  spr_keys, sprite_idx, 31, 12
+    cmp     al, 2
+    jne     >l0
+    ret
+l0: mo_grid 42 by 186, 198 by 54, 12 by 17
+    cmp     ah, 0
+    je      >l1
+    cmp     al, 30
+    ja      >l1
+    mov     sprite_idx, al
+l1: mov     al, 1
     ret
 
 spr_bank_leave_cb:
@@ -927,8 +965,18 @@ pal_bank_enter_cb:
     ret
 
 pal_bank_upd_cb:
-    bt_fire     mouse_data, buttons
+    bt_fire mouse_data, buttons
     key_common  pal_keys, palette_idx, 16, 8
+    cmp     al, 2
+    jne     >l0
+    ret
+l0: mo_grid 42 by 186, 198 by 54, 8 by 25
+    cmp     ah, 0
+    je      >l1
+    cmp     al, 15
+    ja      >l1
+    mov     palette_idx, al
+l1: mov     al, 1
     ret
 
 pal_bank_leave_cb:
