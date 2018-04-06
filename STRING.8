@@ -130,18 +130,26 @@ l0: xchg    ax, dx
     ret
 
 ;зддддддддддддддддддддддддддддддддддддддддддддддддддд©
-;Ё s$_hex2                                           Ё
+;Ё _s$_hex2                                          Ё
 ;юддддддддддддддддддддддддддддддддддддддддддддддддддды
-s$_hex2:
+_s$_hex2:
     push    bx
     lea     bx, hex_chars
     mov     ah, al
     shr     ah, 4
     and     al, 0fh
-    xlat
+    cs xlat
     xchg    ah, al
-    xlat
-    xchg    ah, al
+    cs xlat
     mov     [di], ax
     pop     bx
     ret
+
+s$_hex2 macro
+    push    di, ax
+    mov     di, #1 + 1
+    cs mov  al, #2
+    xor     ah, ah
+    call    _s$_hex2
+    pop     ax, di
+#em

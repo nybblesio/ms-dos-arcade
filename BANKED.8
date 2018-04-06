@@ -56,10 +56,10 @@ TAB_BAR_Y    equ 160
 TAB_BAR_H    equ 10
 TAB_BAR_B    equ TAB_BAR_Y + TAB_BAR_H
 
-PB_Y  equ TAB_BAR_B - 2
-PB_X  equ 40
-PB_MY equ PB_Y + 12
-PB_MX equ PB_X + 4
+PB_Y         equ TAB_BAR_B - 2
+PB_X         equ 40
+PB_MY        equ PB_Y + 12
+PB_MX        equ PB_X + 4
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ macros                                            ³
@@ -80,7 +80,7 @@ vw_clr macro
 #em
 
 key_common macro
-    jmp     >m0
+    jmp long >m0
 
 #1_jt:
     dw      K_ESC
@@ -103,6 +103,42 @@ key_common macro
 
     dw      K_PAGEDOWN
     dw      #1_next
+
+    dw      K_RBRACKET
+    dw      #1_palnext
+
+    dw      K_LBRACKET
+    dw      #1_palprev
+
+    dw      K_0
+    dw      #1_clr0
+
+    dw      K_1
+    dw      #1_clr1
+
+    dw      K_2
+    dw      #1_clr2
+
+    dw      K_3
+    dw      #1_clr3
+
+    dw      K_4
+    dw      #1_clr4
+
+    dw      K_5
+    dw      #1_clr5
+
+    dw      K_6
+    dw      #1_clr6
+
+    dw      K_7
+    dw      #1_clr7
+
+    dw      K_8
+    dw      #1_clr8
+
+    dw      K_9
+    dw      #1_clr9
 
     dw      0, 0
 
@@ -146,6 +182,66 @@ k0: mov     al, 1
 
 #1_next:
     call    btn_block_next_cb
+    mov     al, 1
+    ret
+
+#1_palprev:
+    call    btn_pal_prev_cb
+    mov     al, 1
+    ret
+
+#1_palnext:
+    call    btn_pal_next_cb
+    mov     al, 1
+    ret
+
+#1_clr0:
+    mov     tiled_pal_color, 0
+    mov     al, 1
+    ret
+
+#1_clr1:
+    mov     tiled_pal_color, 1
+    mov     al, 1
+    ret
+
+#1_clr2:
+    mov     tiled_pal_color, 2
+    mov     al, 1
+    ret
+
+#1_clr3:
+    mov     tiled_pal_color, 3
+    mov     al, 1
+    ret
+
+#1_clr4:
+    mov     tiled_pal_color, 4
+    mov     al, 1
+    ret
+
+#1_clr5:
+    mov     tiled_pal_color, 5
+    mov     al, 1
+    ret
+
+#1_clr6:
+    mov     tiled_pal_color, 6
+    mov     al, 1
+    ret
+
+#1_clr7:
+    mov     tiled_pal_color, 7
+    mov     al, 1
+    ret
+
+#1_clr8:
+    mov     tiled_pal_color, 8
+    mov     al, 1
+    ret
+
+#1_clr9:
+    mov     tiled_pal_color, 9
     mov     al, 1
     ret
 
@@ -231,6 +327,15 @@ tool_copyright:
 
 pick_type_title:
     s$_def  'PICK'
+
+temp_number1:
+    s$_def  '00'
+
+temp_number2:
+    s$_def  '00'
+
+temp_number3:
+    s$_def  '00'
 
 tab_label:
     s$_def  '00:TILE'
@@ -342,6 +447,12 @@ btn_tab3:
 
 btn_tab4:
     bt_def F_BTN_NODRAW or F_BTN_ENABLED, 0, 0, TAB_BAR_X + 160 by TAB_BAR_Y + 1, 48 by 9, 9 by 0, 0 by 0, btn_tab4_cb
+
+btn_pal_prev:
+    bt_def F_BTN_TXTONLY, left_arrow_char, 145 by 10, 145 by 10, 6 by 6, 0, 0, btn_pal_prev_cb
+
+btn_pal_next:
+    bt_def F_BTN_TXTONLY, right_arrow_char, 170 by 10, 170 by 10, 6 by 6, 0, 0, btn_pal_next_cb
 
 btn_bank_prev:
     bt_def F_BTN_TXTONLY or F_BTN_VISIBLE, left_arrow_char, TAB_BAR_X + 2 by TAB_BAR_Y + 3, TAB_BAR_X + 2 by TAB_BAR_Y + 3, 6 by 6, 0, 0, btn_bank_prev_cb
@@ -704,18 +815,71 @@ tile_bank_enter_cb:
     mov     b block_idx, 0
     call    update_block_number
     call    update_block_total
+    bt_set  btn_pal_next, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
+    bt_set  btn_pal_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     ret
 
-
 tile_bank_upd_cb:
-    bt_fire     mouse_data, buttons
+    bt_fire mouse_data, buttons
     key_common  tile_keys, tile_idx, 127, 22
+    cmp     al, 2
+    jne     >l1
+    ret
+l1: push    bp
+    mov     bp, mouse_data
+    mov     ax, ms_btn
+    mov     bx, ms_pos
+    pop     bp
+    test    al, F_LEFT_MOUSE_BTN
+    jnz     >l0
+    ret
+l0: push    ax, bx, cx, dx
+    mov     ax, 42 by 186
+    mov     cx, 198 by 54
+    mov     dx, ax
+    add     dx, cx
+    cmp     bh, al
+    jb      >l2
+    cmp     bh, dl
+    ja      >l2
+    cmp     bl, ah
+    jb      >l2
+    cmp     bl, dh
+    ja      >l2
+
+    mov     cx, 9
+    xor     ax, ax
+    mov     al, bl
+    sub     al, 42
+    div     cl
+    mov     dh, al
+    s$_hex2 temp_number1, dh
+
+    xor     ax, ax
+    mov     al, bh
+    sub     al, 186
+    div     cl
+    mov     dl, al
+    s$_hex2 temp_number2, dl
+
+    mov     al, dl
+    mov     cl, 22
+    mul     cl
+    mov     dl, al
+    add     dl, dh
+    s$_hex2 temp_number3, dl
+    cmp     dl, 126
+    ja      >l2
+    mov     tile_idx, dl
+l2: pop     dx, cx, bx, ax
     ret
 
 tile_bank_leave_cb:
     vw_clr
+    bt_set  btn_pal_next, F_BTN_TXTONLY
+    bt_set  btn_pal_prev, F_BTN_TXTONLY
     bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_TXTONLY
     bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_TXTONLY
     ret
@@ -729,6 +893,8 @@ spr_bank_enter_cb:
     mov     b block_idx, 0
     call    update_block_number
     call    update_block_total
+    bt_set  btn_pal_next, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
+    bt_set  btn_pal_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     ret
@@ -740,6 +906,8 @@ spr_bank_upd_cb:
 
 spr_bank_leave_cb:
     vw_clr
+    bt_set  btn_pal_next, F_BTN_TXTONLY
+    bt_set  btn_pal_prev, F_BTN_TXTONLY
     bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_TXTONLY
     bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_TXTONLY
     ret
@@ -1206,12 +1374,7 @@ l0: ret
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_tile_cb                                  ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-btn_type_tile_cb:
-    call    pb_hide
-    bk_new  BANK_TYPE_TILE, 16
-    call    btn_add_limit
-    mov     bp, ax
-    bl_new
+tile_block_init_cb:
     mov     di, bp
     add     di, 5
     cld
@@ -1223,15 +1386,16 @@ l0: stosw
     loop    l0
     ret
 
+btn_type_tile_cb:
+    call    pb_hide
+    bk_new  BANK_TYPE_TILE, 16, tile_block_init_cb
+    call    btn_add_limit
+    ret
+
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_spr_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-btn_type_spr_cb:
-    call    pb_hide
-    bk_new  BANK_TYPE_SPR, 16
-    call    btn_add_limit
-    mov     bp, ax
-    bl_new
+spr_block_init_cb:
     mov     di, bp
     add     di, 5
     cld
@@ -1245,33 +1409,40 @@ l0: stosw
     loop    l0
     ret
 
+btn_type_spr_cb:
+    call    pb_hide
+    bk_new  BANK_TYPE_SPR, 16, spr_block_init_cb
+    call    btn_add_limit
+    ret
+
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_font_cb                                  ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+font_block_init_cb:
+    ret
+
 btn_type_font_cb:
     call    pb_hide
-    bk_new  BANK_TYPE_FONT, 2
+    bk_new  BANK_TYPE_FONT, 2, font_block_init_cb
     call    btn_add_limit
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_bg_cb                                    ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+bg_block_init_cb:
+    ret
+
 btn_type_bg_cb:
     call    pb_hide
-    bk_new  BANK_TYPE_BG, 2
+    bk_new  BANK_TYPE_BG, 2, bg_block_init_cb
     call    btn_add_limit
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_pal_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-btn_type_pal_cb:
-    call    pb_hide
-    bk_new  BANK_TYPE_PAL, 1
-    call    btn_add_limit
-    mov     bp, ax
-    bl_new
+pal_block_init_cb:
     mov     di, bp
     add     di, 5
     mov     bp, color_temp
@@ -1289,21 +1460,33 @@ l0: sc_palr dx
     loop    l0
     ret
 
+btn_type_pal_cb:
+    call    pb_hide
+    bk_new  BANK_TYPE_PAL, 1, pal_block_init_cb
+    call    btn_add_limit
+    ret
+
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_snd_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+snd_block_init_cb:
+    ret
+
 btn_type_snd_cb:
     call    pb_hide
-    bk_new  BANK_TYPE_SND, 16
+    bk_new  BANK_TYPE_SND, 16, snd_block_init_cb
     call    btn_add_limit
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_type_mod_cb                                   ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+mod_block_init_cb:
+    ret
+
 btn_type_mod_cb:
     call    pb_hide
-    bk_new  BANK_TYPE_MOD, 16
+    bk_new  BANK_TYPE_MOD, 16, mod_block_init_cb
     call    btn_add_limit
     ret
 
@@ -1490,45 +1673,6 @@ l2: inc     ax
 l3: ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ tile_draw                                         ³
-;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-tile_draw:
-    struc [bp]
-                dw ?
-        tv_pos  dw ?
-        tv_pal  dw ?
-        tv_h    db ?
-        tv_w    db ?
-    ends
-
-    mov     bp, sp
-    cs mov  bx, tv_pos
-    xchg    bh, bl
-    cs mov  dx, tv_pal
-    shl     dl, 4
-    mov     ch, tv_h
-    mov     cl, tv_w
-    cs mov  es, back_buffer_ptr
-l1: ds mov  al, [si]
-    aam     16
-    add     ah, dl
-    es mov  [bx], ah
-    inc     bl
-    add     al, dl
-    es mov  [bx], al
-    inc     bl
-    inc     si
-    dec     cl
-    jnz     l1
-    mov     cl, tv_w
-    inc     bh
-    sub     bl, tv_w
-    sub     bl, tv_w
-    dec     ch
-    jnz     l1
-    ret
-
-;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ tile_viewer_cb                                    ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 tile_viewer_cb:
@@ -1549,15 +1693,15 @@ l0: cmp     dx, 1
     jmp     >l1
 l3: mov     cx, 17
 l1: push    es, si, ax, bx, cx, dx
-    push    TILE_WIDTH by TILE_LINES, 0, bx
+    push    TILE_WIDTH by TILE_LINES, bx
     cs call tile_draw
-    add     sp, 6
+    add     sp, 4
     pop     dx, cx, bx, ax, si, es
     cs cmp  al, tile_idx
     jne     >l2
     vg_box  bx, 7 by 7, 7 by 0
     push    si
-    te_draw 8, 15, 0
+    te_draw 8, 15
     pop     si
 l2: add     si, TILE_WIDTH * TILE_LINES
     inc     al
@@ -1592,15 +1736,15 @@ l0: cmp     dx, 1
     jmp     >l1
 l3: mov     cx, 7
 l1: push    es, si, ax, bx, cx, dx
-    push    SPR_WIDTH by SPR_LINES, 0, bx
+    push    SPR_WIDTH by SPR_LINES, bx
     cs call tile_draw
-    add     sp, 6
+    add     sp, 4
     pop     dx, cx, bx, ax, si, es
     cs cmp  al, sprite_idx
     jne     >l2
     vg_box  bx, 15 by 15, 7 by 0
     push    si
-    te_draw 16, 7, 0
+    te_draw 16, 7
     pop     si
 l2: add     si, SPR_WIDTH * SPR_LINES
     inc     al
@@ -1690,6 +1834,11 @@ draw:
     st_top
     s$_dec2 state_number, st_code
     vg_str  micro_font, state_number, 2 by 240, 0 by 0, 1
+
+
+    vg_str  micro_font, temp_number1, 42 by 246, 0 by 0, 1
+    vg_str  micro_font, temp_number2, 62 by 246, 0 by 0, 1
+    vg_str  micro_font, temp_number3, 82 by 246, 0 by 0, 1
 #endif
     ret
 

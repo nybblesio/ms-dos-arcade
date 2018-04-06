@@ -118,7 +118,7 @@ bk_ptr macro
 ;³ bl_ptr                                            ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 bl_ptr macro
-    push    ax, bx
+    push    ax, bx, cx, dx
     es mov  bx, md_blk_seg
     mov     es, bx
     xor     ch, ch
@@ -126,6 +126,31 @@ bl_ptr macro
     cs mov  ax, type bank_block
     cs mul  cx
     cs mov  bp, ax
+    pop     dx, cx, bx, ax
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _block_new                                        ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_block_new:
+    es mov  bx, md_blk_off
+    es add  md_blk_off, type bank_block
+    es mov  al, md_flags
+    or      al, F_BANK_BLOCK_DIRTY
+    es mov  md_flags, al
+    es mov  es, md_blk_seg
+    mov     bp, bx
+    es mov  block_type, BLOCK_TYPE_DATA
+    mov     al, bank_block_id
+    es mov  block_id, al
+    inc     al
+    mov     bank_block_id, al
+    es mov  block_flags, F_BANK_BLOCK_DIRTY
+    ret
+
+bl_new macro
+    push    ax, bx
+    call    _block_new
     pop     bx, ax
 #em
 
@@ -162,6 +187,7 @@ _bank_new:
                     dw ?
         bk_blk_max  db ?
         bk_type     db ?
+        bk_init_cb  dw ?
     ends
 
     mov     bp, sp
@@ -173,12 +199,14 @@ _bank_new:
     mov     al, bl
     mov     cx, type bank_block
     mul     cx
+    push    ax  ; size of segment in bytes
     mov     cx, 16
     div     cx
     inc     ax
     mov     cx, ax
     mm_resv cx, offset bank_temp_ptr
     cs mov  ax, bank_temp_ptr
+    pop     cx  ; grabbing size in bytes for memset
     mm_set  ax, 0, cx, 0
     es mov  md_blk_seg, ax
     es mov  md_blk_off, 0
@@ -189,7 +217,20 @@ _bank_new:
     cs mov  bank_hdr_id, cl
     es mov  md_type, bh
     es mov  md_flags, F_BANK_BLOCK_DIRTY
-    cs mov  ax, bp
+    ;cs mov  ax, bp
+    xor     ch, ch
+    mov     cl, bl
+    push    bp
+    mov     bp, sp
+    add     bp, 2
+    mov     bx, bk_init_cb
+    pop     bp
+l1: push    bp, es
+    bl_new
+    push    ax, bx, cx
+    cs call bx
+    pop     cx, bx, ax, es, bp
+    loop    l1
     cmp     bp, SZ_BANK_HDRS
     jae     >l0
     cs add  bp, type bank_block
@@ -198,35 +239,10 @@ l0: ret
 
 bk_new macro
     push    bp, cx, bx
-    push    #1 by #2
+    push    #3, #1 by #2
     call    _bank_new
-    add     sp, 2
+    add     sp, 4
     pop     bx, cx, bp
-#em
-
-;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ _block_new                                        ³
-;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-_block_new:
-    es mov  bx, md_blk_off
-    es add  md_blk_off, type bank_block
-    es mov  al, md_flags
-    or      al, F_BANK_BLOCK_DIRTY
-    es mov  md_flags, al
-    es mov  es, md_blk_seg
-    mov     bp, bx
-    es mov  block_type, BLOCK_TYPE_DATA
-    mov     al, bank_block_id
-    es mov  block_id, al
-    inc     al
-    mov     bank_block_id, al
-    es mov  block_flags, F_BANK_BLOCK_DIRTY
-    ret
-
-bl_new macro
-    push    ax, bx
-    call    _block_new
-    pop     bx, ax
 #em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿

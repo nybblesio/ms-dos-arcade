@@ -19,10 +19,72 @@
 tiled_pal_idx   db  0
 tiled_pal_color db  0
 
+palette_label:
+    s$_def  'PAL:'
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_pal_prev_cb                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_pal_prev_cb:
+    cmp     tiled_pal_idx, 0
+    je      >l0
+    dec     tiled_pal_idx
+l0: ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ btn_pal_next_cb                                   ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+btn_pal_next_cb:
+    cmp     tiled_pal_idx, 15
+    je      >l0
+    inc     tiled_pal_idx
+l0: ret
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ tile_draw                                         ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+tile_draw:
+    struc [bp]
+                dw ?
+        tv_pos  dw ?
+        tv_h    db ?
+        tv_w    db ?
+    ends
+
+    mov     bp, sp
+    cs mov  bx, tv_pos
+    xchg    bh, bl
+    cs mov  dl, tiled_pal_idx
+    shl     dl, 4
+    mov     ch, tv_h
+    mov     cl, tv_w
+    cs mov  es, back_buffer_ptr
+l1: ds mov  al, [si]
+    aam     16
+    add     ah, dl
+    es mov  [bx], ah
+    inc     bl
+    add     al, dl
+    es mov  [bx], al
+    inc     bl
+    inc     si
+    dec     cl
+    jnz     l1
+    mov     cl, tv_w
+    inc     bh
+    sub     bl, tv_w
+    sub     bl, tv_w
+    dec     ch
+    jnz     l1
+    ret
+
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ _tiled_shell                                      ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _tiled_shell:
+    vg_str  micro_font, palette_label, 150 by 2, 7 by 0, 1
+    s$_dec2 palette_number, tiled_pal_idx
+    vg_str  micro_font, palette_number, 154 by 10, 7 by 0, 1
     vg_fbox 43 by 20, 128 by 128, 8 by 0
     vg_box  42 by 20, 128 by 128, 0 by 0
     mov     bh, 238
@@ -40,7 +102,7 @@ l0: vg_fbox bx, 16 by 8, dx
     pop     bx
     cmp     dh, tiled_pal_color
     jne     >l1
-    vg_box  bx, 15 by 8, 7 by 0
+    vg_box  bx, 15 by 7, 7 by 0
 l1: inc     dh
     add     bl, 10
     dec     cx
@@ -69,7 +131,7 @@ l0: cs mov  cl, b[bp + 2]
 l1: ds mov  al, [si]
     aam     16
     push    cx
-    cs mov  cl, b[bp + 6]
+    cs mov  cl, tiled_pal_idx
     mov     ch, ah
     vg_fbox bx, dx, cx
     add     bh, dh
@@ -93,9 +155,9 @@ l1: ds mov  al, [si]
 
 te_draw macro
     push    bp, ax, bx, cx, dx
-    push    #3, #2, #1
+    push    #2, #1
     call    _tiled_draw
-    add     sp, 6
+    add     sp, 4
     pop     dx, cx, bx, ax, bp
 #em
 
