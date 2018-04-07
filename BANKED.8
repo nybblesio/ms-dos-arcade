@@ -645,73 +645,6 @@ tile_idx        db  0
 sprite_idx      db  0
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
-;³ _grid_select                                      ³
-;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
-_grid_select:
-    struc [bp]
-                dw ?
-        gs_pos  dw ?
-        gs_sz   dw ?
-        gs_w    db ?
-        gs_cols db ?
-    ends
-
-    mov     bp, mouse_data
-    mov     ax, ms_btn
-    mov     bx, ms_pos
-    test    al, F_LEFT_MOUSE_BTN
-    jnz     >l0
-    mov     ah, 0
-    mov     al, 0
-    ret
-l0: mov     bp, sp
-    mov     ax, gs_pos
-    mov     cx, gs_sz
-    mov     dx, ax
-    add     dx, cx
-    cmp     bh, al
-    jb      >l1
-    cmp     bh, dl
-    ja      >l1
-    cmp     bl, ah
-    jb      >l1
-    cmp     bl, dh
-    ja      >l1
-    mov     dx, gs_pos
-    xor     ch, ch
-    mov     cl, gs_w
-    xor     ax, ax
-    mov     al, bl
-    sub     al, dh
-    div     cl
-    mov     dh, al
-    s$_hex2 temp_number1, dh
-    xor     ax, ax
-    mov     al, bh
-    mov     bx, gs_pos
-    sub     al, bl
-    div     cl
-    mov     dl, al
-    s$_hex2 temp_number2, dl
-    mov     al, dl
-    mov     cl, gs_cols
-    mul     cl
-    mov     dl, al
-    add     dl, dh
-    s$_hex2 temp_number3, dl
-    mov     ah, 1
-    mov     al, dl
-l1: ret
-
-mo_grid macro
-    push    bp, bx, cx, dx
-    push    #3, #2, #1
-    call    _grid_select
-    add     sp, 6
-    pop     dx, cx, bx, bp
-#em
-
-;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ block utiltity functions                          ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 update_block_number:
@@ -878,6 +811,7 @@ bank_leave_cb:
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 tile_bank_enter_cb:
     tb_blk
+    te_cfg  8 by 15, 63
     vw_func tile_viewer_cb
     mov     b block_idx, 0
     call    update_block_number
@@ -888,20 +822,14 @@ tile_bank_enter_cb:
     bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     ret
 
-
 tile_bank_upd_cb:
     bt_fire mouse_data, buttons
     key_common  tile_keys, tile_idx, 127, 22
     cmp     al, 2
     jne     >l0
     ret
-l0: mo_grid 42 by 186, 198 by 54, 22 by 9
-    cmp     ah, 0
-    je      >l1
-    cmp     al, 126
-    ja      >l1
-    mov     tile_idx, al
-l1: mov     al, 1
+l0: te_upd  22 by 9, 126, offset tile_idx
+    mov     al, 1
     ret
 
 tile_bank_leave_cb:
@@ -917,6 +845,7 @@ tile_bank_leave_cb:
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 spr_bank_enter_cb:
     tb_blk
+    te_cfg  16 by 7, 255
     vw_func spr_viewer_cb
     mov     b block_idx, 0
     call    update_block_number
@@ -933,13 +862,8 @@ spr_bank_upd_cb:
     cmp     al, 2
     jne     >l0
     ret
-l0: mo_grid 42 by 186, 198 by 54, 12 by 17
-    cmp     ah, 0
-    je      >l1
-    cmp     al, 30
-    ja      >l1
-    mov     sprite_idx, al
-l1: mov     al, 1
+l0: te_upd  12 by 17, 30, offset sprite_idx
+    mov     al, 1
     ret
 
 spr_bank_leave_cb:
@@ -970,13 +894,8 @@ pal_bank_upd_cb:
     cmp     al, 2
     jne     >l0
     ret
-l0: mo_grid 42 by 186, 198 by 54, 8 by 25
-    cmp     ah, 0
-    je      >l1
-    cmp     al, 15
-    ja      >l1
-    mov     palette_idx, al
-l1: mov     al, 1
+l0: te_upd  8 by 25, 15, offset palette_idx
+    mov     al, 1
     ret
 
 pal_bank_leave_cb:
@@ -1703,7 +1622,11 @@ l1: vg_fbox bx, 24 by 24, 4 by 0
     s$_dec2 palette_number, al
     cmp     al, palette_idx
     jne     >l2
-    vg_box  bx, 23 by 23, 7 by 0
+    push    bx
+    dec     bh
+    dec     bl
+    vg_box  bx, 25 by 25, 7 by 0
+    pop     bx
 l2: inc     ax
     push    bx
     add     bh, 6
@@ -1747,7 +1670,11 @@ l1: push    es, si, ax, bx, cx, dx
     pop     dx, cx, bx, ax, si, es
     cs cmp  al, tile_idx
     jne     >l2
-    vg_box  bx, 7 by 7, 7 by 0
+    push    bx
+    dec     bh
+    dec     bl
+    vg_box  bx, 9 by 9, 7 by 0
+    pop     bx
     push    si
     te_draw 8, 15
     pop     si
@@ -1790,7 +1717,11 @@ l1: push    es, si, ax, bx, cx, dx
     pop     dx, cx, bx, ax, si, es
     cs cmp  al, sprite_idx
     jne     >l2
-    vg_box  bx, 15 by 15, 7 by 0
+    push    bx
+    dec     bh
+    dec     bl
+    vg_box  bx, 17 by 17, 7 by 0
+    pop     bx
     push    si
     te_draw 16, 7
     pop     si

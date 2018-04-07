@@ -16,11 +16,92 @@
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ variables                                         ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+tiled_fat_sz    db  0
+tiled_fat_w     db  0
+tiled_fat_h     db  0
+tiled_fat_idx   db  0
+tiled_fat_max   db  0
+tiled_fat_flag  db  0
 tiled_pal_idx   db  0
 tiled_pal_color db  0
 
 palette_label:
     s$_def  'PAL:'
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _grid_select                                      ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_grid_select:
+    struc [bp]
+                dw ?
+        gs_pos  dw ?
+        gs_sz   dw ?
+        gs_w    db ?
+        gs_cols db ?
+        gs_max  db ?
+        gs_pad1 db ?
+        gs_var  dw ?
+    ends
+
+    mov     bp, mouse_data
+    mov     ax, ms_btn
+    mov     bx, ms_pos
+    test    al, F_LEFT_MOUSE_BTN
+    jnz     >l0
+    mov     ax, 0
+    ret
+l0: mov     bp, sp
+    mov     ax, gs_pos
+    mov     cx, gs_sz
+    mov     dx, ax
+    add     dx, cx
+    cmp     bh, al
+    jb      >l1
+    cmp     bh, dl
+    ja      >l1
+    cmp     bl, ah
+    jb      >l1
+    cmp     bl, dh
+    ja      >l1
+    mov     dx, gs_pos
+    xor     ch, ch
+    mov     cl, gs_w
+    xor     ax, ax
+    mov     al, bl
+    sub     al, dh
+    div     cl
+    mov     dh, al
+    s$_hex2 temp_number1, dh
+    xor     ax, ax
+    mov     al, bh
+    mov     bx, gs_pos
+    sub     al, bl
+    div     cl
+    mov     dl, al
+    s$_hex2 temp_number2, dl
+    mov     al, dl
+    mov     cl, gs_cols
+    mul     cl
+    mov     dl, al
+    add     dl, dh
+    s$_hex2 temp_number3, dl
+    mov     al, gs_max
+    cmp     dl, al
+    ja      >l1
+    mov     bx, gs_var
+    mov     b[bx], dl
+    mov     ax, 1
+    ret
+l1: mov     ax, 0
+    ret
+
+te_grid macro
+    push    bp, bx, cx, dx
+    push    #5, #4, #3, #2, #1
+    call    _grid_select
+    add     sp, 10
+    pop     dx, cx, bx, bp
+#em
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ btn_pal_prev_cb                                   ³
@@ -87,13 +168,13 @@ _tiled_shell:
     vg_str  micro_font, palette_number, 154 by 10, 7 by 0, 1
     vg_fbox 43 by 20, 128 by 128, 8 by 0
     vg_box  42 by 20, 128 by 128, 0 by 0
-    mov     bh, 238
-    mov     bl, 0
+    mov     bh, 245
+    mov     bl, 6
     mov     dl, tiled_pal_idx
     mov     dh, 0
     mov     cx, 16
-l0: vg_fbox bx, 16 by 8, dx
-    vg_box  bx, 15 by 7, 0 by 0
+l0: vg_fbox bx, 8 by 8, dx
+    vg_box  bx, 7 by 7, 0 by 0
     push    bx
     sub     bh, 12
     add     bl, 2
@@ -102,9 +183,9 @@ l0: vg_fbox bx, 16 by 8, dx
     pop     bx
     cmp     dh, tiled_pal_color
     jne     >l1
-    vg_box  bx, 15 by 7, 7 by 0
+    vg_box  bx, 7 by 7, 7 by 0
 l1: inc     dh
-    add     bl, 10
+    add     bl, 9
     dec     cx
     cmp     cx, 0
     je      >l2
@@ -121,13 +202,32 @@ te_shell macro
 ;³ _tiled_draw                                       ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 _tiled_draw:
-    mov     bp, sp
-    mov     bh, 43
+    cs cmp  tiled_fat_flag, 1
+    jne     >l2
+    cs mov  tiled_fat_flag, 0
+    xor     ah, ah
+    cs mov  al, tiled_fat_idx
+    shr     al, 1
+    mov     di, si
+    add     di, ax
+    ds mov  al, b[di]
+    cs mov  bl, tiled_pal_color
+    cs mov  ah, tiled_fat_idx
+    test    ah, 1
+    jnz     >l3
+    shl     bl, 4
+    and     al, 0fh
+    or      al, bl
+    jmp     >l4
+l3: and     al, 0f0h
+    or      al, bl
+l4: ds mov  b[di], al
+l2: mov     bh, 43
     mov     bl, 21
-    cs mov  dh, b[bp + 4]
+    cs mov  dh, tiled_fat_sz
     mov     dl, dh
-    cs mov  ch, b[bp + 2]
-l0: cs mov  cl, b[bp + 2]
+    cs mov  ch, tiled_fat_h
+l0: cs mov  cl, tiled_fat_w
 l1: ds mov  al, [si]
     aam     16
     push    cx
@@ -154,10 +254,75 @@ l1: ds mov  al, [si]
     ret
 
 te_draw macro
-    push    bp, ax, bx, cx, dx
-    push    #2, #1
+    push    ax, bx, cx, dx
     call    _tiled_draw
-    add     sp, 4
-    pop     dx, cx, bx, ax, bp
+    pop     dx, cx, bx, ax
 #em
 
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _tiled_cfg                                        ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_tiled_cfg:
+    struc [bp]
+                dw ?
+        tg_sz   dw ?
+        tg_max  dw ?
+    ends
+
+    mov     bp, sp
+    mov     ax, tg_sz
+    mov     tiled_fat_sz, al
+    mov     tiled_fat_w, ah
+    mov     tiled_fat_h, ah
+    mov     bx, tg_max
+    mov     tiled_fat_max, bl
+    ret
+
+te_cfg macro
+    push    bp, ax, bx
+    push    #2, #1
+    call    _tiled_cfg
+    add     sp, 4
+    pop     bx, ax, bp
+#em
+
+;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
+;³ _tiled_upd                                        ³
+;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
+_tiled_upd:
+    struc [bp]
+                dw ?
+        te_sz   dw ?
+        te_max  dw ?
+        te_var  dw ?
+    ends
+
+    mov     bp, sp
+    mov     ax, te_sz
+    mov     bx, te_max
+    mov     cx, te_var
+    te_grid 42 by 186, 198 by 54, ax, bx, cx
+    mov     ah, 1
+    mov     al, 9
+    mov     bx, 15
+    mov     cx, offset tiled_pal_color
+    te_grid 245 by 6, 9 by 160, ax, bx, cx
+    mov     ah, tiled_fat_w
+    mov     al, tiled_fat_sz
+    inc     al
+    xor     bh, bh
+    mov     bl, tiled_fat_max
+    mov     cx, offset tiled_fat_idx
+    te_grid 43 by 20, 128 by 128, ax, bx, cx
+    cmp     al, 0
+    je      >l0
+    mov     tiled_fat_flag, 1
+l0: ret
+
+te_upd macro
+    push    bp, ax, bx, cx, dx
+    push    #3, #2, #1
+    call    _tiled_upd
+    add     sp, 6
+    pop     dx, cx, bx, ax, bp
+#em
