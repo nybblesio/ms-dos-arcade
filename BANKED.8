@@ -644,6 +644,11 @@ tile_idx        db  0
 ;
 sprite_idx      db  0
 
+;
+; font editor
+;
+glyph_idx       db  0
+
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
 ;³ block utiltity functions                          ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
@@ -981,21 +986,31 @@ mod_bank_leave_cb:
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 font_bank_enter_cb:
     tb_blk
+    te_cfg  6 by 20, 36
     vw_func font_viewer_cb
     mov     b block_idx, 0
     call    update_block_number
     call    update_block_total
+    bt_set  btn_pal_next, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
+    bt_set  btn_pal_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_ENABLED or F_BTN_TXTONLY
     ret
 
 font_bank_upd_cb:
     bt_fire mouse_data, buttons
-    mov     al, 0
+    key_common  font_keys, glyph_idx, 128, 29
+    cmp     al, 2
+    jne     >l0
+    ret
+l0: te_upd  29 by 7, 127, offset glyph_idx
+    mov     al, 1
     ret
 
 font_bank_leave_cb:
     vw_clr
+    bt_set  btn_pal_next, F_BTN_TXTONLY
+    bt_set  btn_pal_prev, F_BTN_TXTONLY
     bt_set  btn_block_next, F_BTN_VISIBLE or F_BTN_TXTONLY
     bt_set  btn_block_prev, F_BTN_VISIBLE or F_BTN_TXTONLY
     ret
@@ -1386,6 +1401,16 @@ btn_type_spr_cb:
 ;³ btn_type_font_cb                                  ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 font_block_init_cb:
+    mov     di, bp
+    add     di, 5
+    cld
+    mov     cx, 1363
+    mov     al, 07
+l0: stosb
+    stosb
+    stosb
+    rol     al, 4
+    loop    l0
     ret
 
 btn_type_font_cb:
@@ -1582,6 +1607,47 @@ bg_viewer_cb:
 ;³ font_viewer_cb                                    ³
 ;ÀÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÙ
 font_viewer_cb:
+    push    ds, es, bp, ax, bx, cx, dx
+    te_shell
+    tb_blk
+    bl_ptr  block_idx
+    mov     ds, es
+    mov     si, bp
+    add     si, 5
+    mov     al, 0
+    mov     dx, 5
+    mov     bh, TAB_BAR_X + 4
+    mov     bl, TAB_BAR_Y + 26
+l0: cmp     dx, 1
+    je      >l3
+    mov     cx, 29
+    jmp     >l1
+l3: mov     cx, 12
+l1: push    es, si, ax, bx, cx, dx
+    push    3 by 6, bx
+    cs call tile_draw
+    add     sp, 4
+    pop     dx, cx, bx, ax, si, es
+    cs cmp  al, glyph_idx
+    jne     >l2
+    push    bx
+    dec     bh
+    dec     bl
+    vg_box  bx, 7 by 7, 7 by 0
+    pop     bx
+    push    si
+    te_draw
+    pop     si
+l2: add     si, 3 * 6
+    inc     al
+    add     bh, 7
+    loop    l1
+    add     bl, 7
+    mov     bh, TAB_BAR_X + 4
+    dec     dx
+    cmp     dx, 0
+    jnz     l0
+    pop     dx, cx, bx, ax, bp, es, ds
     ret
 
 ;ÚÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄÄ¿
@@ -1676,7 +1742,7 @@ l1: push    es, si, ax, bx, cx, dx
     vg_box  bx, 9 by 9, 7 by 0
     pop     bx
     push    si
-    te_draw 8, 15
+    te_draw
     pop     si
 l2: add     si, TILE_WIDTH * TILE_LINES
     inc     al
@@ -1723,7 +1789,7 @@ l1: push    es, si, ax, bx, cx, dx
     vg_box  bx, 17 by 17, 7 by 0
     pop     bx
     push    si
-    te_draw 16, 7
+    te_draw
     pop     si
 l2: add     si, SPR_WIDTH * SPR_LINES
     inc     al
